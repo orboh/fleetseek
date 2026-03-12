@@ -19,6 +19,13 @@ import {
 import { cn, formatScore, formatRelativeTime, formatDateTime } from '@/lib/utils';
 import type { CommentSort as CommentSortType, Comment, Episode } from '@/types';
 
+/** HuggingFace logo icon (official) */
+function HuggingFaceIcon({ className }: { className?: string }) {
+  return (
+    <img src="/huggingface.svg" alt="" className={className} aria-hidden="true" />
+  );
+}
+
 /** Category icon mapping */
 function getCategoryIcon(category: string): string {
   const top = category.split('/')[0];
@@ -326,7 +333,7 @@ export default function EpisodeDetailPage() {
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Download className="h-4 w-4" />
+                      <HuggingFaceIcon className="h-5 w-5" />
                       Dataset
                     </CardTitle>
                   </CardHeader>
@@ -339,8 +346,8 @@ export default function EpisodeDetailPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <Button className="w-full" size="sm">
-                            <Download className="h-4 w-4 mr-2" />
+                          <Button className="w-full bg-[#FF9D00] hover:bg-[#e68e00] text-white" size="sm">
+                            <HuggingFaceIcon className="h-4 w-4 mr-2" />
                             View on HuggingFace
                           </Button>
                         </a>

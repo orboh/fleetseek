@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+import subprocess
 import tempfile
 import time
 from dataclasses import dataclass
@@ -169,6 +170,13 @@ class MuJoCoDataSource(DataSource):
             json.dumps({"task_index": 0, "task": self._task_name}) + "\n"
         )
 
+        # Save camera images as MP4 videos
+        if self._frames and self._frames[0].get("images"):
+            videos_dir = ep_dir / "videos"
+            videos_dir.mkdir(parents=True, exist_ok=True)
+            for cam_name in self._frames[0]["images"]:
+                self._save_video(videos_dir / f"{cam_name}.mp4", cam_name)
+
         logger.info(
             "MuJoCo recording saved: %s (%d frames, %.1fs)",
             ep_dir, total_frames, total_frames / self.config.fps if self.config.fps else 0,
@@ -186,3 +194,44 @@ class MuJoCoDataSource(DataSource):
             completion_rate=completion_rate,
             failure_reason=failure_reason,
         )
+
+    def _save_video(self, output_path: Path, camera_name: str) -> None:
+        """Save recorded image frames as an MP4 video using ffmpeg.
+
+        Args:
+            output_path: Path for the output MP4 file.
+            camera_name: Camera name to extract frames from.
+        """
+        with tempfile.TemporaryDirectory(prefix="robonet_frames_") as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            frame_count = 0
+            for i, frame in enumerate(self._frames):
+                img_bytes = frame.get("images", {}).get(camera_name)
+                if img_bytes:
+                    (tmp_path / f"frame_{i:06d}.png").write_bytes(img_bytes)
+                    frame_count += 1
+
+            if frame_count == 0:
+                logger.warning("No frames for camera %s, skipping video", camera_name)
+                return
+
+            cmd = [
+                "ffmpeg", "-y",
+                "-framerate", str(self.config.fps),
+                "-i", str(tmp_path / "frame_%06d.png"),
+                "-c:v", "libx264",
+                "-crf", "23",
+                "-preset", "fast",
+                "-pix_fmt", "yuv420p",
+                "-movflags", "+faststart",
+                str(output_path),
+            ]
+            try:
+                subprocess.run(cmd, capture_output=True, check=True, timeout=120)
+                logger.info("Saved video: %s (%d frames)", output_path, frame_count)
+            except FileNotFoundError:
+                logger.error("ffmpeg not found. Install it: apt install ffmpeg")
+            except subprocess.CalledProcessError as e:
+                logger.error("ffmpeg video encoding failed: %s", e.stderr.decode())
+            except subprocess.TimeoutExpired:
+                logger.error("ffmpeg video encoding timed out")
