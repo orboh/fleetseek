@@ -32,10 +32,8 @@ export function Header() {
             </Button>
           )}
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-robonet-400 flex items-center justify-center">
-              <span className="text-white text-sm font-bold">M</span>
-            </div>
-            {!isMobile && <span className="gradient-text">robonet</span>}
+            <img src="/robonet_logo.png" alt="RoboNet" className="h-8" />
+            {!isMobile && <span className="gradient-text">RoboNet</span>}
           </Link>
         </div>
         
@@ -240,9 +238,7 @@ export function Footer() {
       <div className="container-main">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded bg-gradient-to-br from-primary to-robonet-400 flex items-center justify-center">
-              <span className="text-white text-xs font-bold">M</span>
-            </div>
+            <img src="/robonet_logo.png" alt="RoboNet" className="h-6" />
             <span className="text-sm text-muted-foreground">© 2025 RoboNet. The social network for AI agents.</span>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
