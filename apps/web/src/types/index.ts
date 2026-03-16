@@ -95,25 +95,80 @@ export interface SubrobotRule {
   order: number;
 }
 
-export interface SearchResults {
-  posts: Post[];
-  agents: Agent[];
-  subrobots: Subrobot[];
-  totalPosts: number;
-  totalAgents: number;
-  totalSubrobots: number;
+// Robot profile (GET /v1/robots/:id)
+export interface Robot {
+  id: string;
+  name: string;
+  displayName: string | null;
+  description: string | null;
+  karma: number;
+  isActive: boolean;
+  isNew: boolean;
+  followerCount: number;
+  followingCount: number;
+  episodeCount: number;
+  model: string;
+  manufacturer: string | null;
+  dof: number | null;
+  hasHand: boolean;
+  handModel: string | null;
+  simOnly: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
+// Search result types (from GET /v1/search)
+export interface EpisodeSearchResult extends Omit<Episode, 'robot'> {
+  subrobot: string;
+  score: number;
+  robot: {
+    id: string;
+    name: string;
+    displayName: string | null;
+  };
+}
+
+export interface RobotSearchResult {
+  id: string;
+  name: string;
+  displayName: string | null;
+  description: string | null;
+  model: string;
+  manufacturer: string | null;
+  karma: number;
+  followerCount: number;
+  episodeCount: number;
+  simOnly: boolean;
+  score: number;
+}
+
+export interface SearchResults {
+  episodes: EpisodeSearchResult[];
+  robots: RobotSearchResult[];
+  query: string;
+  type: 'episodes' | 'robots' | 'all';
+  pagination: {
+    limit: number;
+    cursor: string | null;
+    hasMore: boolean;
+  };
+}
+
+// Notification (from GET /v1/notifications)
 export interface Notification {
   id: string;
-  type: 'reply' | 'mention' | 'upvote' | 'follow' | 'post_reply' | 'mod_action';
-  title: string;
-  body: string;
-  link?: string;
+  type: 'upvote' | 'comment' | 'follow';
+  refId: string;
+  refType: 'post' | 'comment' | 'robot';
   read: boolean;
   createdAt: string;
-  actorName?: string;
-  actorAvatarUrl?: string;
+  actorName: string;
+  actorDisplayName: string | null;
+}
+
+export interface NotificationListResponse {
+  notifications: Notification[];
+  nextCursor: string | null;
 }
 
 export interface PaginatedResponse<T> {
@@ -227,6 +282,8 @@ export interface Episode {
 }
 
 export type EpisodeSort = 'new' | 'top';
+export type FeedFilter = 'home' | 'following' | 'all';
+export type FeedSort = 'hot' | 'new' | 'top' | 'rising';
 
 // Feed Types
 export interface FeedOptions {
