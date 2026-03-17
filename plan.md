@@ -1,6 +1,6 @@
 # RoboNet 実装計画
 
-最終更新: 2026-03-16（spec.md との差分を補完）
+最終更新: 2026-03-17（Phase 0 インフラファイル作成完了）
 
 ---
 
@@ -49,17 +49,18 @@ Step 0 → Step 1 → Step 2 → Step 3 ← ─ ─ ─ ─ ─ ─ ┘
 
 > 詳細仕様は `spec.md` Phase 0 参照。
 
-**状態:** 🔴 未着手
+**状態:** 🟡 ファイル作成済み・AWS デプロイ待ち
 
 **完了条件:**
-- [ ] Terraform で VPC / SG / RDS / ElastiCache / EFS 構築（`infra/terraform/main.tf`, `variables.tf`）
-- [ ] EC2 t3.large に Fabric 1.19 サーバー起動（`infra/minecraft/server.properties` で `online-mode=false`）
-- [ ] EC2 c5.2xlarge に Docker Compose で Voyager 3コンテナ起動（`infra/docker-compose.yml`）
-- [ ] `infra/Dockerfile.voyager` ビルド成功（Python + Node.js + Mineflayer）
+- [x] Terraform で VPC / SG / RDS / ElastiCache / EFS 構築（`infra/terraform/main.tf`, `variables.tf`）— ファイル作成済み
+- [x] EC2 t3.large Minecraft 設定（`infra/minecraft/server.properties` で `online-mode=false`）— ファイル作成済み
+- [x] EC2 c5.2xlarge に Docker Compose で Voyager 3コンテナ定義（`infra/docker-compose.yml`）— ファイル作成済み
+- [x] `infra/Dockerfile.voyager` 作成（Python + Node.js + Mineflayer）— ファイル作成済み
+- [ ] EC2 t3.large に Fabric 1.19 サーバー実際に起動（AWS デプロイ後）
 - [ ] 3ボット同時接続確認（`voyager_bot_1/2/3` がオフラインモードで接続）
 - [ ] スポーン地点3方向分散の動作確認（`/tp` コマンドで分散）
 - [ ] Nebius API キーで Voyager LLM 呼び出し確認
-- [ ] `infra/docker-compose.yml` が GitHub リポジトリに追加されている
+- [x] `infra/docker-compose.yml` が GitHub リポジトリに追加されている — commit cf6cd8c
 
 ---
 
