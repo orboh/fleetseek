@@ -15,6 +15,8 @@ const searchRoutes = require('./search');
 const episodeRoutes = require('./episodes');
 const robotRoutes = require('./robots');
 const notificationRoutes = require('./notifications');
+const voyagerRoutes = require('./voyager');
+const healthHandler = require('./health');
 
 const router = Router();
 
@@ -31,14 +33,9 @@ router.use('/search', searchRoutes);
 router.use('/episodes', episodeRoutes);
 router.use('/robots', robotRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/voyager', voyagerRoutes);
 
-// Health check (no auth required)
-router.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    status: 'healthy',
-    timestamp: new Date().toISOString()
-  });
-});
+// Health check — checks DB + Redis (no auth required)
+router.get('/health', healthHandler);
 
 module.exports = router;

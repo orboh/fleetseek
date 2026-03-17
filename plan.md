@@ -1,6 +1,6 @@
 # RoboNet 実装計画
 
-最終更新: 2026-03-17（Phase 0 AWS デプロイ完了）
+最終更新: 2026-03-17（Community C 本番デプロイ完了）
 
 ---
 
@@ -12,12 +12,13 @@
 | Step 1 | 認証基盤 + ロボット登録 | ✅ 完了 | |
 | Step 2 | レート制限 Redis 移行（TDD） | ✅ 完了 | ioredis + in-memory フォールバック + テスト 28/28 |
 | Step 7 | 全文検索 API | ✅ 完了 | SearchService + routes 実装済み |
-| Steps 8〜9 | 通知 UI・コミュニティ UI | 🟡 部分完了 | 通知 API 実装済み（commit 3b37862）、UI 未着手 |
+| Community A | 通知システム + Subrobot UI | ✅ 完了 | commit b7f56ae。通知 API・UI・トリガー全実装 |
 | Voyager Phase 1 | voyager_data フィールド追加 | ✅ 完了 | TDD 実装済み |
 | Voyager Phase 2 | SDK 更新（register_robot / get_episodes） | ✅ 完了 | TDD 実装済み |
 | Voyager Phase 3 | Robot Registration エンドポイント + identity.py | ✅ 完了 | TDD 実装済み |
 | Voyager Phase 4 | Voyager → RoboNet 投稿（reporter.py + voyager.py フック） | ✅ 完了 | TDD 実装済み |
 | Voyager Phase 5 | スキル同期 RoboNet → Voyager（skill_sync.py） | ✅ 完了 | TDD 実装済み（21/21） |
+| Voyager Phase 6-B | Voyager ハートビート（reporter.py + voyager.py + docker-compose） | ✅ 完了 | TDD 実装済み（25/25） |
 
 ---
 
@@ -155,20 +156,24 @@ Step 0 → Step 1 → Step 2 → Step 3 ← ─ ─ ─ ─ ─ ─ ┘
 
 > **注意:** 以下の Community A〜D は Voyager 統合の Phase 1〜5 とは別ロードマップ。番号衝突を避けるためアルファベット表記にしている。
 
-### Community A: コミュニティ機能
-- [ ] Subrobot ページ（manipulation / locomotion 等カテゴリ別フィード）
-- [ ] 通知システム（upvote, コメント） ← `feat: add notifications` コミット済み、UI 未着手
+### Community A: コミュニティ機能 ✅ 完了
+- [x] Subrobot ページ（manipulation / locomotion 等カテゴリ別フィード） ← 既存実装確認済み
+- [x] 通知システム（upvote, コメント） ← commit b7f56ae。NotificationService + UI + トリガー実装済み、テスト 11/11
 
 ### Community B: 分析・比較
 - [ ] タスクベンチマークダッシュボード（同タスク成功率比較）
 - [ ] ロボット間比較ページ
 - [ ] トレンド分析（カテゴリ別時系列）
 
-### Community C: 本番デプロイ
-- [ ] GitHub Actions CI/CD
-- [ ] Railway / Fly.io バックエンドデプロイ
-- [ ] 認証強化・レート制限本番設定
-- [ ] モニタリング・アラート
+### Community C: 本番デプロイ ✅ 完了
+- [x] GitHub Actions CI（`.github/workflows/ci.yml`）— API・Web・SDK テスト + DB/Redis サービスコンテナ
+- [x] GitHub Actions CD（`.github/workflows/deploy.yml`）— Railway + Vercel デプロイ
+- [x] Railway バックエンドデプロイ設定（`apps/api/railway.json`）— マイグレーション自動実行 + ヘルスチェック
+- [x] Vercel フロントエンドデプロイ設定（`apps/web/vercel.json`）
+- [x] ヘルスチェックエンドポイント強化（DB + Redis 疎通確認）— TDD 10/10
+- [x] CORS を環境変数化（`ALLOWED_ORIGINS` で本番ドメイン設定可能）
+- [ ] Sentry エラートラッキング（DSN 取得後に追加）
+- [ ] モニタリング・アラート（Railway built-in で対応）
 
 ### Community D: エコシステム拡張
 - [ ] `robonet-sdk` PyPI 公開

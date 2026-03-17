@@ -9,6 +9,7 @@ const compression = require('compression');
 const morgan = require('morgan');
 
 const routes = require('./routes');
+const healthHandler = require('./routes/health');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const config = require('./config');
 
@@ -18,10 +19,13 @@ const app = express();
 app.use(helmet());
 
 // CORS
+const allowedOrigins = config.isProduction
+  ? (process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+      : ['https://www.robonet.com', 'https://robonet.com'])
+  : '*';
 app.use(cors({
-  origin: config.isProduction 
-    ? ['https://www.robonet.com', 'https://robonet.com']
-    : '*',
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -41,6 +45,9 @@ app.use(express.json({ limit: '1mb' }));
 
 // Trust proxy (for rate limiting behind reverse proxy)
 app.set('trust proxy', 1);
+
+// Root-level health check for Railway/Fly.io healthcheck probes (no /api/v1 prefix)
+app.get('/health', healthHandler);
 
 // API routes
 app.use('/api/v1', routes);
