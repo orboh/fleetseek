@@ -1,6 +1,6 @@
 # RoboNet 実装計画
 
-最終更新: 2026-03-17（Phase 6-B Voyager ハートビート完了）
+最終更新: 2026-03-17（Phase 6-C フロントエンド ダッシュボード完了）
 
 ---
 
@@ -20,7 +20,7 @@
 | Voyager Phase 5 | スキル同期 RoboNet → Voyager（skill_sync.py） | ✅ 完了 | TDD 実装済み（21/21） |
 | Voyager Phase 6-A | ダッシュボード API（VoyagerStatusService + /voyager routes） | ✅ 完了 | TDD 実装済み |
 | Voyager Phase 6-B | Voyager ハートビート（reporter.py + voyager.py + docker-compose） | ✅ 完了 | TDD 実装済み（25/25） |
-| Voyager Phase 6-C | フロントエンド ダッシュボード（/voyager ページ + BotStatusCard） | 🟡 進行中 | |
+| Voyager Phase 6-C | フロントエンド ダッシュボード（/voyager ページ + BotStatusCard） | ✅ 完了 | TDD 実装済み（10/10） |
 
 ---
 

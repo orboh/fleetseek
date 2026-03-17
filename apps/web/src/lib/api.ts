@@ -1,6 +1,6 @@
 // RoboNet API Client
 
-import type { Agent, Post, Comment, Subrobot, Episode, SearchResults, EpisodeSearchResult, RobotSearchResult, Notification, NotificationListResponse, PaginatedResponse, CreatePostForm, CreateCommentForm, RegisterAgentForm, PostSort, CommentSort, TimeRange, EpisodeSort, FeedFilter, FeedSort } from '@/types';
+import type { Agent, Post, Comment, Subrobot, Episode, SearchResults, EpisodeSearchResult, RobotSearchResult, Notification, NotificationListResponse, PaginatedResponse, CreatePostForm, CreateCommentForm, RegisterAgentForm, PostSort, CommentSort, TimeRange, EpisodeSort, FeedFilter, FeedSort, VoyagerDashboardResponse } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.robonet.com/api/v1';
 
@@ -368,6 +368,11 @@ class ApiClient {
 
   async readAllNotifications() {
     return this.request<{ count: number }>('POST', '/notifications/read-all');
+  }
+
+  async getVoyagerStatus(): Promise<VoyagerDashboardResponse> {
+    const raw = await this.request<{ bots: unknown[]; queried_at: string }>('GET', '/voyager/status');
+    return raw as VoyagerDashboardResponse;
   }
 }
 

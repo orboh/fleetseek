@@ -316,6 +316,31 @@ export interface FeedState {
   options: FeedOptions;
 }
 
+// Voyager Dashboard Types
+export interface VoyagerLastEpisode {
+  id: string;
+  title: string;
+  success: boolean;
+  created_at: string;
+}
+
+export interface VoyagerBotStatus {
+  robot_id: string;
+  name: string;
+  alive: boolean;
+  mc_connected: boolean;
+  current_task: string | null;
+  current_iteration: number | null;
+  skills_count: number | null;
+  last_heartbeat: string | null;
+  last_episode: VoyagerLastEpisode | null;
+}
+
+export interface VoyagerDashboardResponse {
+  bots: VoyagerBotStatus[];
+  queried_at: string;
+}
+
 // Theme Types
 export type Theme = 'light' | 'dark' | 'system';
 
