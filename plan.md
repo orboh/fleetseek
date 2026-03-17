@@ -20,7 +20,7 @@
 | Voyager Phase 5 | スキル同期 RoboNet → Voyager（skill_sync.py） | ✅ 完了 | TDD 実装済み（21/21） |
 | Voyager Phase 6-A | ダッシュボード API（VoyagerStatusService + /voyager routes） | ✅ 完了 | TDD 実装済み |
 | Voyager Phase 6-B | Voyager ハートビート（reporter.py + voyager.py + docker-compose） | ✅ 完了 | TDD 実装済み（25/25） |
-| Voyager Phase 6-C | フロントエンド ダッシュボード（/voyager ページ + BotStatusCard） | 🔲 未着手 | |
+| Voyager Phase 6-C | フロントエンド ダッシュボード（/voyager ページ + BotStatusCard） | 🟡 進行中 | |
 
 ---
 
