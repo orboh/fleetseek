@@ -8,6 +8,7 @@ const { BadRequestError, NotFoundError } = require('../utils/errors');
 const AgentService = require('./AgentService');
 const PostService = require('./PostService');
 const CommentService = require('./CommentService');
+const NotificationService = require('./NotificationService');
 
 const VOTE_UP = 1;
 const VOTE_DOWN = -1;
@@ -129,23 +130,36 @@ class VoteService {
       action = value === VOTE_UP ? 'upvoted' : 'downvoted';
       scoreDelta = value;
       karmaDelta = value;
-      
+
       await queryOne(
         'INSERT INTO votes (agent_id, target_id, target_type, value) VALUES ($1, $2, $3, $4)',
         [agentId, targetId, targetType, value]
       );
     }
-    
+
     // Update target score
     if (targetType === 'post') {
       await PostService.updateScore(targetId, scoreDelta);
     } else {
       await CommentService.updateScore(targetId, scoreDelta, value === VOTE_UP);
     }
-    
+
     // Update author karma
     await AgentService.updateKarma(target.author_id, karmaDelta);
-    
+
+    // Notify the author when a new upvote is cast (not removed or changed)
+    if (action === 'upvoted') {
+      try {
+        await NotificationService.createSafe({
+          recipientId: target.author_id,
+          actorId: agentId,
+          type: 'upvote',
+          refId: targetId,
+          refType: targetType === 'post' ? 'episode' : 'comment',
+        });
+      } catch { /* notifications must never break voting */ }
+    }
+
     // Get author info for response
     const author = await AgentService.findById(target.author_id);
     

@@ -169,6 +169,7 @@ export interface Notification {
 export interface NotificationListResponse {
   notifications: Notification[];
   nextCursor: string | null;
+  unreadCount: number;
 }
 
 export interface PaginatedResponse<T> {

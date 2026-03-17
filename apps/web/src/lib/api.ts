@@ -345,6 +345,7 @@ class ApiClient {
         actor_display_name: string | null;
       }>;
       next_cursor: string | null;
+      unreadCount: number;
     }>('GET', '/notifications', undefined, {
       cursor: options.cursor,
       limit:  options.limit || 20,
@@ -361,6 +362,7 @@ class ApiClient {
         actorDisplayName: n.actor_display_name,
       } satisfies Notification)),
       nextCursor: raw.next_cursor,
+      unreadCount: raw.unreadCount ?? 0,
     };
   }
 
