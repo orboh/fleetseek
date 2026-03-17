@@ -1,6 +1,6 @@
 # RoboNet 実装計画
 
-最終更新: 2026-03-17（Phase 6-C フロントエンド ダッシュボード完了）
+最終更新: 2026-03-17（Community C Sentry 統合完了）
 
 ---
 
@@ -21,6 +21,9 @@
 | Voyager Phase 6-A | ダッシュボード API（VoyagerStatusService + /voyager routes） | ✅ 完了 | TDD 実装済み |
 | Voyager Phase 6-B | Voyager ハートビート（reporter.py + voyager.py + docker-compose） | ✅ 完了 | TDD 実装済み（25/25） |
 | Voyager Phase 6-C | フロントエンド ダッシュボード（/voyager ページ + BotStatusCard） | ✅ 完了 | TDD 実装済み（10/10） |
+| Community B | 分析 API（AnalyticsService + /analytics routes） | ✅ 完了 | TDD 実装済み（17/17） |
+| Community C | 本番デプロイ（CI/CD + Health + CORS + Sentry） | ✅ 完了 | TDD 実装済み（10+9/19）|
+| Community D | Webhook API（WebhookService + WebhookDeliveryWorker + /webhooks routes） | ✅ 完了 | TDD 実装済み（18/18） |
 
 ---
 
@@ -227,10 +230,11 @@ Step 0 → Step 1 → Step 2 → Step 3 ← ─ ─ ─ ─ ─ ─ ┘
 - [x] Subrobot ページ（manipulation / locomotion 等カテゴリ別フィード） ← 既存実装確認済み
 - [x] 通知システム（upvote, コメント） ← commit b7f56ae。NotificationService + UI + トリガー実装済み、テスト 11/11
 
-### Community B: 分析・比較
-- [ ] タスクベンチマークダッシュボード（同タスク成功率比較）
-- [ ] ロボット間比較ページ
-- [ ] トレンド分析（カテゴリ別時系列）
+### Community B: 分析・比較 ✅ 完了
+- [x] タスクベンチマークダッシュボード（同タスク成功率比較）— `GET /analytics/benchmarks`
+- [x] ロボット間比較ページ — `GET /analytics/robots/compare`
+- [x] トレンド分析（カテゴリ別時系列）— `GET /analytics/trends`
+- [x] AnalyticsService + routes 実装済み（TDD 17/17）
 
 ### Community C: 本番デプロイ ✅ 完了
 - [x] GitHub Actions CI（`.github/workflows/ci.yml`）— API・Web・SDK テスト + DB/Redis サービスコンテナ
@@ -239,7 +243,7 @@ Step 0 → Step 1 → Step 2 → Step 3 ← ─ ─ ─ ─ ─ ─ ┘
 - [x] Vercel フロントエンドデプロイ設定（`apps/web/vercel.json`）
 - [x] ヘルスチェックエンドポイント強化（DB + Redis 疎通確認）— TDD 10/10
 - [x] CORS を環境変数化（`ALLOWED_ORIGINS` で本番ドメイン設定可能）
-- [ ] Sentry エラートラッキング（DSN 取得後に追加）
+- [x] Sentry エラートラッキング（`src/lib/sentry.js` + `app.js` 統合 — TDD 9/9）
 - [ ] モニタリング・アラート（CloudWatch で対応）
 
 **デプロイ構成:**
@@ -249,7 +253,7 @@ Step 0 → Step 1 → Step 2 → Step 3 ← ─ ─ ─ ─ ─ ─ ┘
 
 ### Community D: エコシステム拡張
 - [ ] `robonet-sdk` PyPI 公開
-- [ ] Webhook API（新エピソード投稿イベント）
+- [x] Webhook API（新エピソード投稿イベント）— WebhookService + WebhookDeliveryWorker + routes 実装済み（TDD 18/18）
 
 ---
 

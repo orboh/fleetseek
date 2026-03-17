@@ -12,8 +12,15 @@ const routes = require('./routes');
 const healthHandler = require('./routes/health');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const config = require('./config');
+const sentry = require('./lib/sentry');
 
 const app = express();
+
+// Initialize Sentry (no-op if SENTRY_DSN is not set)
+sentry.init();
+
+// Sentry request handler (must be first middleware)
+sentry.addRequestHandler(app);
 
 // Security middleware
 app.use(helmet());
@@ -61,7 +68,8 @@ app.get('/', (req, res) => {
   });
 });
 
-// Error handling
+// Error handling (Sentry error handler must come before other error handlers)
+sentry.addErrorHandler(app);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
