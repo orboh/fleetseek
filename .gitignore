@@ -17,3 +17,10 @@ venv/
 .pytest_cache/
 coverage/
 .turbo/
+
+# Terraform secrets
+infra/terraform/terraform.tfvars
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.backup
+infra/terraform/.terraform.lock.hcl

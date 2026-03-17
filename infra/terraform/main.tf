@@ -60,6 +60,21 @@ resource "aws_subnet" "private" {
   }
 }
 
+resource "aws_subnet" "private_c" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.3.0/24"
+  availability_zone = "ap-northeast-1c"
+
+  tags = {
+    Name = "robonet-private-subnet-c"
+  }
+}
+
+resource "aws_route_table_association" "private_c" {
+  subnet_id      = aws_subnet.private_c.id
+  route_table_id = aws_route_table.private.id
+}
+
 # ─────────────────────────────────────────
 # Routing
 # ─────────────────────────────────────────
@@ -122,7 +137,7 @@ resource "aws_route_table_association" "private" {
 # ─────────────────────────────────────────
 
 resource "aws_security_group" "minecraft" {
-  name        = "sg-minecraft"
+  name        = "robonet-minecraft-sg"
   description = "Security group for Minecraft server"
   vpc_id      = aws_vpc.main.id
 
@@ -147,7 +162,7 @@ resource "aws_security_group" "minecraft" {
 }
 
 resource "aws_security_group" "voyager" {
-  name        = "sg-voyager"
+  name        = "robonet-voyager-sg"
   description = "Security group for Voyager agent EC2"
   vpc_id      = aws_vpc.main.id
 
@@ -172,7 +187,7 @@ resource "aws_security_group" "voyager" {
 }
 
 resource "aws_security_group" "alb" {
-  name        = "sg-alb"
+  name        = "robonet-alb-sg"
   description = "Security group for ALB"
   vpc_id      = aws_vpc.main.id
 
@@ -205,7 +220,7 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_security_group" "api" {
-  name        = "sg-api"
+  name        = "robonet-api-sg"
   description = "Security group for RoboNet API"
   vpc_id      = aws_vpc.main.id
 
@@ -238,7 +253,7 @@ resource "aws_security_group" "api" {
 }
 
 resource "aws_security_group" "rds" {
-  name        = "sg-rds"
+  name        = "robonet-rds-sg"
   description = "Security group for RDS PostgreSQL"
   vpc_id      = aws_vpc.main.id
 
@@ -263,7 +278,7 @@ resource "aws_security_group" "rds" {
 }
 
 resource "aws_security_group" "redis" {
-  name        = "sg-redis"
+  name        = "robonet-redis-sg"
   description = "Security group for ElastiCache Redis"
   vpc_id      = aws_vpc.main.id
 
@@ -293,7 +308,7 @@ resource "aws_security_group" "redis" {
 
 resource "aws_db_subnet_group" "main" {
   name       = "robonet-db-subnet-group"
-  subnet_ids = [aws_subnet.private.id]
+  subnet_ids = [aws_subnet.private.id, aws_subnet.private_c.id]
 
   tags = {
     Name = "robonet-db-subnet-group"
@@ -327,7 +342,7 @@ resource "aws_db_instance" "postgres" {
 
 resource "aws_elasticache_subnet_group" "main" {
   name       = "robonet-redis-subnet-group"
-  subnet_ids = [aws_subnet.private.id]
+  subnet_ids = [aws_subnet.private.id, aws_subnet.private_c.id]
 
   tags = {
     Name = "robonet-redis-subnet-group"
@@ -363,7 +378,7 @@ resource "aws_efs_file_system" "ckpt" {
 }
 
 resource "aws_security_group" "efs" {
-  name        = "sg-efs"
+  name        = "robonet-efs-sg"
   description = "Security group for EFS mount targets"
   vpc_id      = aws_vpc.main.id
 
