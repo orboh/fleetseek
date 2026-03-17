@@ -73,6 +73,41 @@ class RoboNetClient:
             )
         return data
 
+    # ─── Class-level endpoints (no auth required) ────────────
+
+    @classmethod
+    def register_robot(
+        cls,
+        name: str,
+        base_url: str = DEFAULT_BASE_URL,
+        display_name: str = "",
+        model: str = "unknown",
+        sim_only: bool = False,
+        description: str = "",
+        timeout: float = DEFAULT_TIMEOUT,
+    ) -> dict:
+        """ロボットを RoboNet に登録し robot_id と api_key を返す（認証不要）。"""
+        with httpx.Client(timeout=timeout) as client:
+            resp = client.post(
+                f"{base_url.rstrip('/')}/robots/register",
+                json={
+                    "name": name,
+                    "display_name": display_name,
+                    "model": model,
+                    "sim_only": sim_only,
+                    "description": description,
+                },
+                headers={"Content-Type": "application/json"},
+            )
+        data = resp.json()
+        if not resp.is_success:
+            raise RoboNetError(
+                status_code=resp.status_code,
+                message=data.get("error", "Registration failed"),
+                code=data.get("code"),
+            )
+        return data
+
     # ─── Agent endpoints ─────────────────────────────────────
 
     def get_me(self) -> dict:
