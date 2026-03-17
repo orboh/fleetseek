@@ -30,7 +30,7 @@
 Phase 0（AWS インフラ）─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┐
 Step 0 → Step 1 → Step 2 → Step 3 ← ─ ─ ─ ─ ─ ─ ┘
                          (Voyager Phase 1→2→3→4→5) ✅ 全完了
-                         (Voyager Phase 6-A ✅ → 6-B ✅ → 6-C 🔲)
+                         (Voyager Phase 6-A ✅ → 6-B ✅ → 6-C ✅) 全完了
                          → Step 7 → Step 8 → Step 9
 ```
 
@@ -197,25 +197,25 @@ Step 0 → Step 1 → Step 2 → Step 3 ← ─ ─ ─ ─ ─ ─ ┘
 
 ---
 
-### Phase 6-C: フロントエンド ダッシュボード 🔲
+### Phase 6-C: フロントエンド ダッシュボード ✅
 
 **目的:** `/voyager` ページでボットのリアルタイムステータスを表示。
 
 **変更ファイル:**
-- `apps/web/src/app/(main)/voyager/page.tsx` — ダッシュボードページ（新規）
-- `apps/web/src/components/voyager/BotStatusCard.tsx` — ボットカードコンポーネント（新規）
-- `apps/web/src/components/voyager/BotStatusCard.stories.tsx` — Storybook story（必須）
-- `apps/web/src/types/index.ts` — `VoyagerBotStatus`, `VoyagerDashboardResponse` 型追加
-- `apps/web/src/lib/api.ts` — `getVoyagerStatus()` 追加
+- `apps/web/src/app/(main)/voyager/page.tsx` — ダッシュボードページ（新規） ✅
+- `apps/web/src/components/voyager/BotStatusCard.tsx` — ボットカードコンポーネント（新規） ✅
+- `apps/web/src/components/voyager/BotStatusCard.stories.tsx` — Storybook story（必須） ✅
+- `apps/web/src/types/index.ts` — `VoyagerBotStatus`, `VoyagerDashboardResponse` 型追加 ✅
+- `apps/web/src/lib/api.ts` — `getVoyagerStatus()` 追加 ✅
 
 **TDD チェックリスト:**
-- [ ] テスト: `alive: true` のとき ONLINE バッジが表示される
-- [ ] テスト: `alive: false` のとき OFFLINE バッジ + current_task がグレーアウト
-- [ ] テスト: `mc_connected` の値が MC アイコンに反映される
-- [ ] テスト: `last_episode: null` のとき "No recent episodes" が表示される
-- [ ] テスト: loading 中はスケルトンが表示される
-- [ ] Storybook: online / offline / loading / no-episodes バリアント
-- [ ] 実装: `page.tsx` / `BotStatusCard.tsx` / 型定義 / `api.ts`
+- [x] テスト: `alive: true` のとき ONLINE バッジが表示される
+- [x] テスト: `alive: false` のとき OFFLINE バッジ + current_task がグレーアウト
+- [x] テスト: `mc_connected` の値が MC アイコンに反映される
+- [x] テスト: `last_episode: null` のとき "No recent episodes" が表示される
+- [x] テスト: loading 中はスケルトンが表示される
+- [x] Storybook: online / offline / loading / no-episodes / mc-disconnected バリアント
+- [x] 実装: `page.tsx` / `BotStatusCard.tsx` / 型定義 / `api.ts`
 
 ---
 
