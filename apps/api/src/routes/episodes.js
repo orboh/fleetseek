@@ -22,7 +22,8 @@ router.post('/', requireAuth, episodeLimiter, asyncHandler(async (req, res) => {
     robot_id, task_name, task_category, success: isSuccess,
     completion_rate, failure_reason, lerobot_path, fps,
     modalities, title, description, tags,
-    hf_repo, hf_episode_index, thumbnail_url, video_url
+    hf_repo, hf_episode_index, thumbnail_url, video_url,
+    voyager_data,
   } = req.body;
 
   const result = await EpisodeService.create({
@@ -43,6 +44,7 @@ router.post('/', requireAuth, episodeLimiter, asyncHandler(async (req, res) => {
     hfEpisodeIndex: hf_episode_index,
     thumbnailUrl: thumbnail_url,
     videoUrl: video_url,
+    voyagerData: voyager_data,
   });
 
   created(res, result);

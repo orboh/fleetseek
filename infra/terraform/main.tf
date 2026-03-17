@@ -149,6 +149,14 @@ resource "aws_security_group" "minecraft" {
     security_groups = [aws_security_group.voyager.id]
   }
 
+  ingress {
+    description     = "RCON from Voyager"
+    from_port       = 25575
+    to_port         = 25575
+    protocol        = "tcp"
+    security_groups = [aws_security_group.voyager.id]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -409,6 +417,35 @@ resource "aws_efs_mount_target" "private" {
 }
 
 # ─────────────────────────────────────────
+# IAM Role for SSM Session Manager
+# ─────────────────────────────────────────
+
+resource "aws_iam_role" "ec2_ssm" {
+  name = "robonet-ec2-ssm-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
+
+  tags = { Name = "robonet-ec2-ssm-role" }
+}
+
+resource "aws_iam_role_policy_attachment" "ssm" {
+  role       = aws_iam_role.ec2_ssm.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_instance_profile" "ec2_ssm" {
+  name = "robonet-ec2-ssm-profile"
+  role = aws_iam_role.ec2_ssm.name
+}
+
+# ─────────────────────────────────────────
 # EC2 Minecraft Server
 # ─────────────────────────────────────────
 
@@ -417,6 +454,7 @@ resource "aws_instance" "minecraft" {
   instance_type          = "t3.large"
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.minecraft.id]
+  iam_instance_profile   = aws_iam_instance_profile.ec2_ssm.name
 
   user_data = <<-EOF
     #!/bin/bash
@@ -492,6 +530,7 @@ resource "aws_instance" "voyager" {
   instance_type          = "c5.2xlarge"
   subnet_id              = aws_subnet.private.id
   vpc_security_group_ids = [aws_security_group.voyager.id]
+  iam_instance_profile   = aws_iam_instance_profile.ec2_ssm.name
 
   user_data = <<-EOF
     #!/bin/bash

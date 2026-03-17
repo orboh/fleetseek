@@ -133,41 +133,21 @@ Security Groups:
 
 ---
 
-## Phase 1: エピソードスキーマ汎用化
+## Phase 1: Voyager データフィールド追加
 
 ### 目的
 
-`lerobot_path`, `fps`, `modalities` という LeRobot 固有フィールドを汎用化し、Voyager・ROS・Isaac など任意のソースに対応できるようにする。
+Voyager のセッションデータを保存する `voyager_data` カラムをエピソードテーブルに追加する。
 
 ### DB スキーマ変更
 
 ```sql
--- 追加
 ALTER TABLE episodes
-  ADD COLUMN source_type TEXT NOT NULL DEFAULT 'lerobot',
-  ADD COLUMN source_metadata JSONB NOT NULL DEFAULT '{}';
-
--- NULL 許容に変更（後方互換）
-ALTER TABLE episodes
-  ALTER COLUMN fps DROP NOT NULL,
-  ALTER COLUMN modalities DROP NOT NULL;
-
--- source_type インデックス（フィルタリング用）
-CREATE INDEX idx_episodes_source_type ON episodes(source_type);
+  ADD COLUMN voyager_data JSONB;
 ```
 
-### source_metadata スキーマ
+### voyager_data スキーマ
 
-**source_type = 'lerobot':**
-```json
-{
-  "lerobot_path": "./data/episode_042",
-  "fps": 30,
-  "modalities": ["rgb_head", "rgb_wrist", "joints", "ft"]
-}
-```
-
-**source_type = 'voyager':**
 ```json
 {
   "session_id": "uuid-v4",
@@ -186,34 +166,10 @@ CREATE INDEX idx_episodes_source_type ON episodes(source_type);
 }
 ```
 
-### バリデーションロジック変更
-
-`EpisodeService.create()` の必須チェックを `source_type` で条件分岐:
-
-```javascript
-// 変更前（ハードコード必須）
-if (!lerobotPath) throw new Error('lerobot_path is required')
-if (!fps) throw new Error('fps is required')
-if (!modalities) throw new Error('modalities is required')
-
-// 変更後（source_type 依存）
-if (sourceType === 'lerobot' || !sourceType) {
-  if (!lerobotPath) throw new Error('lerobot_path is required for source_type=lerobot')
-}
-```
-
 ### TypeScript 型定義変更 (`apps/web/src/types/index.ts`)
 
 ```typescript
-export type EpisodeSourceType = 'lerobot' | 'voyager' | 'ros' | 'isaac' | 'unknown';
-
-export interface LeRobotSourceMetadata {
-  lerobot_path: string;
-  fps: number;
-  modalities: string[];
-}
-
-export interface VoyagerSourceMetadata {
+export interface VoyagerData {
   session_id: string;
   skills_acquired: string[];
   skills_code: Record<string, string>;
@@ -227,20 +183,9 @@ export interface VoyagerSourceMetadata {
   world_seed?: number;
 }
 
-export type EpisodeSourceMetadata =
-  | LeRobotSourceMetadata
-  | VoyagerSourceMetadata
-  | Record<string, unknown>;
-
 // Episode 型に追加
-// source_type: EpisodeSourceType
-// source_metadata: EpisodeSourceMetadata
-// fps と modalities はオプショナルに変更（後方互換）
-// fps?: number
-// modalities?: string[]
+// voyager_data?: VoyagerData
 ```
-
-> **注意:** `fps?` / `modalities?` をオプショナルに変えると、これらを参照している UI コンポーネントに型エラーが波及する。変更後に `npm run type-check` を実行して影響範囲を確認すること。
 
 ### subrobot 名の長さ制約
 
@@ -249,9 +194,7 @@ export type EpisodeSourceMetadata =
 ### 完了条件
 
 - [ ] マイグレーションスクリプト作成・適用
-- [ ] 既存の LeRobot エピソード投稿テストが全て通る
-- [ ] Voyager 用エピソード（`source_type='voyager'`）が投稿できる
-- [ ] `fps` / `modalities` なしで投稿してもエラーにならない
+- [ ] `voyager_data` を含むエピソードが投稿できる
 
 ---
 
@@ -259,7 +202,7 @@ export type EpisodeSourceMetadata =
 
 ### 目的
 
-Python SDK の `EpisodeCreateRequest` を汎用化し、LeRobot と Voyager 両方から使えるようにする。
+Python SDK の `EpisodeCreateRequest` に `voyager_data` フィールドを追加する。
 
 ### `packages/sdk/src/robonet_sdk/models.py` 変更
 
@@ -272,21 +215,10 @@ class EpisodeCreateRequest:
     success: bool
     completion_rate: float
     title: str
-    # 汎用フィールド
-    source_type: str = 'lerobot'
-    source_metadata: dict = field(default_factory=dict)
-    # 後方互換（LeRobot 用エイリアス）
+    voyager_data: dict | None = None
     failure_reason: str | None = None
     description: str | None = None
     tags: list[str] = field(default_factory=list)
-    # 後方互換フィールド（既存コードが lerobot_path=... で渡せるように）
-    # lerobot_path を渡した場合は自動的に source_metadata に変換
-    lerobot_path: str | None = None
-
-    def __post_init__(self):
-        if self.lerobot_path:
-            self.source_type = 'lerobot'
-            self.source_metadata.setdefault('lerobot_path', self.lerobot_path)
 ```
 
 ### `packages/sdk/src/robonet_sdk/client.py` 変更
@@ -313,7 +245,6 @@ def register_robot(
 ### 完了条件
 
 - [ ] `EpisodeCreateRequest` に `source_type` / `source_metadata` が追加されている
-- [ ] 既存の `lerobot_path` 引数を使ったコードが後方互換で動く
 - [ ] `register_robot()` が実装されている
 - [ ] SDK テスト更新
 
@@ -590,12 +521,11 @@ def sync_skills(
     imported = 0
     for robot_id in trusted_robot_ids:
         episodes = client.get_episodes(
-            source_type='voyager',
             robot_id=robot_id,
             limit=50,
         )
         for episode in episodes:
-            skills_code = episode.get('source_metadata', {}).get('skills_code', {})
+            skills_code = (episode.get('voyager_data') or {}).get('skills_code', {})
             for skill_name, code in skills_code.items():
                 # 既存スキルと衝突する場合は V2, V3... でバージョニング（既存動作）
                 skill_manager.add_new_skill(info={
@@ -631,7 +561,7 @@ for skill_name, code in skills_code.items():
 - [ ] インポートされたスキルに `robonet_` プレフィックスが付いている
 - [ ] `Voyager.__init__()` に `sync_skills_on_start` フック追加
 - [ ] スキル同期失敗時も初期化が続行される（try/except）
-- [ ] `GET /api/v1/episodes` に `source_type` / `robot_id` クエリパラメータ対応（未実装の場合 `EpisodeService.list()` の SQL に WHERE 句追加）
+- [ ] `GET /api/v1/episodes` に `robot_id` クエリパラメータ対応（未実装の場合 `EpisodeService.list()` の SQL に WHERE 句追加）
 
 ---
 
@@ -641,13 +571,13 @@ for skill_name, code in skills_code.items():
 
 | ファイル | 変更内容 |
 |---|---|
-| `apps/api/scripts/schema.sql` | `source_type`, `source_metadata` カラム追加。`fps`/`modalities` を NULL 許容に変更 |
+| `apps/api/scripts/schema.sql` | `voyager_data` カラム追加 |
 | `apps/api/scripts/migrate_voyager.sql` | ALTER TABLE マイグレーション（新規作成） |
-| `apps/api/src/routes/episodes.js` | `source_type`, `source_metadata` を受け取るよう変更 |
-| `apps/api/src/services/EpisodeService.js` | バリデーションを `source_type` 条件分岐に変更。INSERT クエリ更新 |
+| `apps/api/src/routes/episodes.js` | `voyager_data` を受け取るよう変更 |
+| `apps/api/src/services/EpisodeService.js` | `voyager_data` 対応、INSERT クエリ更新 |
 | `apps/api/src/routes/robots.js` | `POST /robots/register` 便宜エンドポイント追加 |
-| `apps/web/src/types/index.ts` | `EpisodeSourceType`, `VoyagerSourceMetadata` 追加。`fps?`/`modalities?` オプショナル化 |
-| `packages/sdk/src/robonet_sdk/models.py` | `EpisodeCreateRequest` 汎用化 |
+| `apps/web/src/types/index.ts` | `VoyagerData` 追加 |
+| `packages/sdk/src/robonet_sdk/models.py` | `EpisodeCreateRequest` に `voyager_data` 追加 |
 | `packages/sdk/src/robonet_sdk/client.py` | `register_robot()`, `get_episodes()` 追加 |
 | `.gitignore` | `**/robonet_identity.json` 追加 |
 
@@ -692,16 +622,14 @@ for skill_name, code in skills_code.items():
 - [ ] スポーン地点3方向分散の動作確認
 
 ### Phase 1
-- [ ] テスト: `source_type='lerobot'` で既存フィールドなしがエラーになる
-- [ ] テスト: `source_type='voyager'` で `fps`/`modalities` なしでも投稿できる
+- [ ] テスト: `voyager_data` を含むエピソードが投稿できる
 - [ ] 実装: マイグレーション SQL
-- [ ] 実装: `EpisodeService.js` バリデーション変更
+- [ ] 実装: `EpisodeService.js` 更新
 - [ ] 実装: TypeScript 型定義変更
-- [ ] 確認: `npm run type-check` で UI コンポーネントの型エラーを洗い出し修正
 
 ### Phase 2
-- [ ] テスト: 既存 `lerobot_path` 引数が後方互換で動く
 - [ ] テスト: `register_robot()` が正しいペイロードを送る
+- [ ] テスト: `get_episodes(robot_id, limit)` が正しいクエリパラメータを送る
 - [ ] 実装: `models.py` / `client.py`
 
 ### Phase 3
@@ -735,5 +663,4 @@ for skill_name, code in skills_code.items():
 | `learn()` フック例外でクラッシュ | `try/except Exception` で囲み `logger.warning` に落とす |
 | subrobot 名が VARCHAR(24) 超え | `task_category` の最初のセグメントを 24 文字以内に設計 |
 | 同一 `ckpt_dir` での並行起動 | `ckpt_dir` を分けることを制約として明記（Voyager の設計制約） |
-| 既存 UI コンポーネントへの型エラー波及 | Phase 1 完了後に `type-check` を実行して修正範囲を確認 |
 | `source_metadata` JSONB の肥大化 | `skills_code` の総サイズを 1MB 以内に制限（SDK 側でチェック）|

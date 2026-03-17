@@ -31,7 +31,8 @@ class EpisodeService {
       authorId, robotId, taskName, taskCategory, success: isSuccess,
       completionRate, failureReason, lerobotPath, fps, modalities,
       title, description, tags,
-      hfRepo, hfEpisodeIndex, thumbnailUrl, videoUrl
+      hfRepo, hfEpisodeIndex, thumbnailUrl, videoUrl,
+      voyagerData,
     } = data;
 
     // Validate required fields
@@ -84,16 +85,19 @@ class EpisodeService {
         `INSERT INTO episodes (
            post_id, robot_id, task_name, task_category, success,
            completion_rate, failure_reason, fps, modalities,
-           lerobot_path, hf_repo, hf_episode_index, thumbnail_url, video_url
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+           lerobot_path, hf_repo, hf_episode_index, thumbnail_url, video_url,
+           voyager_data
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
          RETURNING id, post_id, robot_id, task_name, task_category, success,
                    completion_rate, failure_reason, fps, modalities,
-                   hf_repo, hf_episode_index, web_url, thumbnail_url, video_url, created_at`,
+                   hf_repo, hf_episode_index, web_url, thumbnail_url, video_url,
+                   voyager_data, created_at`,
         [
           post.id, robotId, taskName, taskCategory, isSuccess,
           completionRate, failureReason || null, fps, modalities,
           lerobotPath, hfRepo || null, hfEpisodeIndex ?? null,
-          thumbnailUrl || null, videoUrl || null
+          thumbnailUrl || null, videoUrl || null,
+          voyagerData || null,
         ]
       )).rows[0];
 
@@ -158,7 +162,7 @@ class EpisodeService {
       `SELECT e.id, e.post_id, e.robot_id, e.task_name, e.task_category,
               e.success, e.completion_rate, e.failure_reason, e.fps,
               e.modalities, e.hf_repo, e.hf_episode_index,
-              e.thumbnail_url, e.video_url, e.created_at,
+              e.thumbnail_url, e.video_url, e.voyager_data, e.created_at,
               p.title, p.content AS description, p.score AS upvote_count,
               p.comment_count, p.subrobot,
               a.name AS robot_name, a.display_name AS robot_display_name

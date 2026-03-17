@@ -218,6 +218,7 @@ CREATE TABLE episodes (
   video_url TEXT,
   duplicate_score FLOAT,
   lerobot_path TEXT,
+  voyager_data JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

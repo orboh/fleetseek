@@ -251,6 +251,20 @@ export interface BreadcrumbItem {
   href?: string;
 }
 
+export interface VoyagerData {
+  session_id: string;
+  skills_acquired: string[];
+  skills_code: Record<string, string>;
+  tasks_completed: string[];
+  tasks_failed?: string[];
+  items_gained?: Record<string, number>;
+  total_iterations?: number;
+  ckpt_dir?: string;
+  biome?: string;
+  game_mode?: string;
+  world_seed?: number;
+}
+
 // Episode Types
 export interface Episode {
   id: string;
@@ -267,6 +281,7 @@ export interface Episode {
   hfEpisodeIndex: number | null;
   thumbnailUrl: string | null;
   videoUrl: string | null;
+  voyagerData: VoyagerData | null;
   title: string;
   description: string;
   tags: string[];

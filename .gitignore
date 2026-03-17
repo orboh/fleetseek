@@ -18,6 +18,9 @@ venv/
 coverage/
 .turbo/
 
+# Robot identity files (contain API keys - must never be committed)
+**/robonet_identity.json
+
 # Terraform secrets
 infra/terraform/terraform.tfvars
 infra/terraform/.terraform/

@@ -298,5 +298,183 @@ describe('Redis Client', () => {
   });
 });
 
+// ─── EpisodeService – voyager_data ───────────────────────────────────────────
+
+describe('EpisodeService - voyager_data support', () => {
+  function makeDbMock(capturedParams) {
+    return {
+      transaction: async (fn) => {
+        const mockClient = {
+          query: async (sql, params) => {
+            capturedParams.push({ sql, params });
+            if (sql.includes('SELECT id FROM subrobots')) {
+              return { rows: [{ id: 'sub-id' }] };
+            }
+            if (sql.includes('INSERT INTO posts')) {
+              return {
+                rows: [{
+                  id: 'post-id', title: 'T', content: 'D',
+                  subrobot: 'game', score: 0, comment_count: 0, created_at: new Date()
+                }]
+              };
+            }
+            if (sql.includes('INSERT INTO episodes')) {
+              return {
+                rows: [{
+                  id: 'ep-id', post_id: 'post-id', robot_id: 'bot1',
+                  task_name: 'test', task_category: 'game/minecraft',
+                  success: true, completion_rate: 1.0, failure_reason: null,
+                  fps: 20, modalities: ['rgb'], hf_repo: null,
+                  hf_episode_index: null, web_url: null,
+                  thumbnail_url: null, video_url: null, created_at: new Date()
+                }]
+              };
+            }
+            return { rows: [] };
+          }
+        };
+        return fn(mockClient);
+      },
+      queryOne: async () => null,
+      queryAll: async () => [],
+    };
+  }
+
+  function loadFreshEpisodeService(dbMock) {
+    const dbKey = require.resolve('../src/config/database');
+    const original = require.cache[dbKey];
+    require.cache[dbKey] = {
+      id: dbKey, filename: dbKey, loaded: true, exports: dbMock
+    };
+    delete require.cache[require.resolve('../src/services/EpisodeService')];
+    const svc = require('../src/services/EpisodeService');
+    // restore immediately so other tests are unaffected
+    require.cache[dbKey] = original;
+    delete require.cache[require.resolve('../src/services/EpisodeService')];
+    return svc;
+  }
+
+  test('INSERT SQL includes voyager_data column when provided', async () => {
+    const captured = [];
+    const EpisodeService = loadFreshEpisodeService(makeDbMock(captured));
+
+    await EpisodeService.create({
+      authorId: 'agent-uuid',
+      robotId: 'bot-1',
+      taskName: 'minecraft_lifelong_learning',
+      taskCategory: 'game/minecraft',
+      success: true,
+      completionRate: 1.0,
+      lerobotPath: './ckpt',
+      fps: 20,
+      modalities: ['rgb'],
+      title: 'Voyager Session',
+      description: 'A test session',
+      tags: ['test'],
+      voyagerData: {
+        session_id: 'sess-001',
+        skills_acquired: ['craftWoodenPickaxe'],
+        skills_code: { craftWoodenPickaxe: 'async function craftWoodenPickaxe(bot) {}' },
+        tasks_completed: ['Mine 1 wood log'],
+      },
+    });
+
+    const episodeInsert = captured.find(p => p.sql.includes('INSERT INTO episodes'));
+    assert(episodeInsert !== undefined, 'Should have executed INSERT INTO episodes');
+    assert(episodeInsert.sql.includes('voyager_data'), 'INSERT SQL should include voyager_data column');
+    const hasVoyagerDataParam = episodeInsert.params.some(
+      p => p !== null && typeof p === 'object' && p.session_id === 'sess-001'
+    );
+    assert(hasVoyagerDataParam, 'voyager_data object should be in INSERT params');
+  });
+
+  test('creates episode without voyager_data (backward compatibility)', async () => {
+    const captured = [];
+    const EpisodeService = loadFreshEpisodeService(makeDbMock(captured));
+
+    await EpisodeService.create({
+      authorId: 'agent-uuid',
+      robotId: 'bot-1',
+      taskName: 'test',
+      taskCategory: 'game/minecraft',
+      success: false,
+      completionRate: 0.0,
+      lerobotPath: './ckpt',
+      fps: 20,
+      modalities: ['rgb'],
+      title: 'No Voyager Episode',
+      description: 'Test',
+      tags: [],
+    });
+
+    const episodeInsert = captured.find(p => p.sql.includes('INSERT INTO episodes'));
+    assert(episodeInsert !== undefined, 'Should have executed INSERT INTO episodes');
+    assert(true, 'Creating episode without voyager_data should not throw');
+  });
+});
+
+// ─── RobotService – POST /robots/register ────────────────────────────────────
+
+describe('RobotService - register (idempotency)', () => {
+  function makeDbMock(existing) {
+    return {
+      queryOne: async (sql) => {
+        if (sql.includes('SELECT a.id AS agent_id')) return existing;
+        return null;
+      },
+      transaction: async (fn) => {
+        const mockClient = {
+          query: async (sql) => {
+            if (sql.includes('INSERT INTO agents')) return { rows: [{ id: 'new-agent-id' }] };
+            if (sql.includes('INSERT INTO robots')) return { rows: [{ id: 'new-robot-id' }] };
+            return { rows: [] };
+          },
+        };
+        return fn(mockClient);
+      },
+    };
+  }
+
+  function loadFreshRobotService(dbMock) {
+    const dbKey = require.resolve('../src/config/database');
+    const original = require.cache[dbKey];
+    require.cache[dbKey] = { id: dbKey, filename: dbKey, loaded: true, exports: dbMock };
+    delete require.cache[require.resolve('../src/services/RobotService')];
+    const svc = require('../src/services/RobotService');
+    require.cache[dbKey] = original;
+    delete require.cache[require.resolve('../src/services/RobotService')];
+    return svc;
+  }
+
+  test('creates new robot and returns credentials', async () => {
+    const RobotService = loadFreshRobotService(makeDbMock(null));
+    const result = await RobotService.register({ name: 'voyager_bot_1', model: 'voyager', sim_only: true });
+    assert(result.robot_id === 'new-robot-id', 'Should return new robot_id');
+    assert(result.agent_id === 'new-agent-id', 'Should return new agent_id');
+    assert(result.api_key.startsWith('robonet_'), 'api_key should have robonet_ prefix');
+  });
+
+  test('returns same robot_id when name already registered (idempotent)', async () => {
+    const existing = { agent_id: 'existing-agent-id', robot_id: 'existing-robot-id' };
+    const RobotService = loadFreshRobotService(makeDbMock(existing));
+    const result = await RobotService.register({ name: 'voyager_bot_1', model: 'voyager', sim_only: true });
+    assertEqual(result.robot_id, 'existing-robot-id', 'Should return existing robot_id');
+    assertEqual(result.agent_id, 'existing-agent-id', 'Should return existing agent_id');
+    assert(result.api_key.startsWith('robonet_'), 'Should return a valid new api_key');
+  });
+
+  test('throws BadRequestError when name is missing', async () => {
+    const RobotService = loadFreshRobotService(makeDbMock(null));
+    let threw = false;
+    try {
+      await RobotService.register({ name: '' });
+    } catch (e) {
+      threw = true;
+      assertEqual(e.statusCode, 400, 'Should be 400 error');
+    }
+    assert(threw, 'Should throw on missing name');
+  });
+});
+
 // Run
 runTests();

@@ -65,6 +65,24 @@ OPENAI_API_KEY=...
 HF_TOKEN=...
 ```
 
+## エージェント間連携（Discord / openclaw）
+
+RoboNet の実装は別エージェントが担当する。実装について疑問・確認事項が生じた場合は、openclaw 経由で Discord の orboh-dev スレッドに質問を投げること。
+
+```bash
+# 質問を送信
+openclaw message send --channel discord --target 1483341564485832816 --message "【RoboNet質問】<内容>"
+
+# 返答を確認
+openclaw message read --channel discord --target 1483341564485832816 --limit 10
+```
+
+- 実装の仕様が不明なとき
+- API の挙動について確認が必要なとき
+- 設計判断を相手エージェントと合わせたいとき
+
+上記いずれの場合も、自己判断で進める前に Discord に投げて確認を取ること。
+
 ## よく使うコマンド
 
 ```bash

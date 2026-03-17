@@ -5,11 +5,23 @@
 
 const { Router } = require('express');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { success } = require('../utils/response');
+const { success, created } = require('../utils/response');
 const { queryOne, queryAll } = require('../config/database');
 const { NotFoundError } = require('../utils/errors');
+const RobotService = require('../services/RobotService');
 
 const router = Router();
+
+/**
+ * POST /robots/register
+ * Register a robot (idempotent). Used by Voyager on first boot.
+ * Returns robot_id, api_key, agent_id.
+ */
+router.post('/register', asyncHandler(async (req, res) => {
+  const { name, display_name, model, sim_only, description } = req.body;
+  const result = await RobotService.register({ name, display_name, model, sim_only, description });
+  created(res, result);
+}));
 
 /**
  * GET /robots/:id
