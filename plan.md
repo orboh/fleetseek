@@ -1,6 +1,6 @@
 # RoboNet 実装計画
 
-最終更新: 2026-03-17（Community C 本番デプロイ完了）
+最終更新: 2026-03-17（Phase 6-B Voyager ハートビート完了）
 
 ---
 
@@ -18,7 +18,9 @@
 | Voyager Phase 3 | Robot Registration エンドポイント + identity.py | ✅ 完了 | TDD 実装済み |
 | Voyager Phase 4 | Voyager → RoboNet 投稿（reporter.py + voyager.py フック） | ✅ 完了 | TDD 実装済み |
 | Voyager Phase 5 | スキル同期 RoboNet → Voyager（skill_sync.py） | ✅ 完了 | TDD 実装済み（21/21） |
+| Voyager Phase 6-A | ダッシュボード API（VoyagerStatusService + /voyager routes） | ✅ 完了 | TDD 実装済み |
 | Voyager Phase 6-B | Voyager ハートビート（reporter.py + voyager.py + docker-compose） | ✅ 完了 | TDD 実装済み（25/25） |
+| Voyager Phase 6-C | フロントエンド ダッシュボード（/voyager ページ + BotStatusCard） | 🔲 未着手 | |
 
 ---
 
@@ -28,6 +30,7 @@
 Phase 0（AWS インフラ）─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┐
 Step 0 → Step 1 → Step 2 → Step 3 ← ─ ─ ─ ─ ─ ─ ┘
                          (Voyager Phase 1→2→3→4→5) ✅ 全完了
+                         (Voyager Phase 6-A ✅ → 6-B ✅ → 6-C 🔲)
                          → Step 7 → Step 8 → Step 9
 ```
 
@@ -152,6 +155,70 @@ Step 0 → Step 1 → Step 2 → Step 3 ← ─ ─ ─ ─ ─ ─ ┘
 
 ---
 
+### Phase 6-A: ダッシュボード API ✅
+
+**目的:** Redis + PostgreSQL からボットステータスを集約し REST API で公開。
+
+**変更ファイル:**
+- `apps/api/src/services/VoyagerStatusService.js` — Redis + PostgreSQL からステータス集約（新規） ✅
+- `apps/api/src/routes/voyager.js` — `GET /voyager/status`, `POST /voyager/heartbeat`（新規） ✅
+- `apps/api/src/routes/index.js` — `/voyager` ルートをマウント ✅
+- `apps/api/test/voyager.test.js` — TDD テスト ✅
+
+**TDD チェックリスト:**
+- [x] テスト: `GET /api/v1/voyager/status` が 200 と `bots` 配列を返す
+- [x] テスト: Redis キーが存在するとき `alive: true`、`mc_connected` が反映される
+- [x] テスト: Redis キーが存在しないとき `alive: false`、`current_task: null`
+- [x] テスト: Redis が利用不可のとき 200 を返し全ボット `alive: false`
+- [x] テスト: Redis が落ちていても `last_episode` は PostgreSQL から返る
+- [x] テスト: ボット発見は `model = 'voyager-minecraft'` フィルタを使う
+- [x] テスト: `POST /api/v1/voyager/heartbeat` は認証必須
+- [x] テスト: 有効ペイロードで Redis に TTL 300 秒のキーが書かれる
+- [x] テスト: Redis 不可のとき heartbeat エンドポイントは 204 を返す
+
+---
+
+### Phase 6-B: Voyager ハートビート ✅
+
+**目的:** Voyager コンテナから60秒ごとにハートビートを送信。ボット発見時のホスト名問題も解決。
+
+**変更ファイル:**
+- `voyager/robonet/reporter.py` — `report_heartbeat()` + `start/stop_heartbeat_loop()` 追加 ✅
+- `voyager/voyager.py` — `_init_robonet()` でハートビートスレッド開始 ✅
+- `infra/docker-compose.yml` — `hostname: voyager_bot_N` 追加 ✅
+- `voyager/tests/test_reporter.py` — ハートビートテスト4件追加 ✅
+
+**TDD チェックリスト:**
+- [x] テスト: `report_heartbeat()` が正しいペイロードを `/voyager/heartbeat` に送る
+- [x] テスト: `report_heartbeat()` は失敗しても例外を伝播しない
+- [x] テスト: identity が None のとき `report_heartbeat()` は no-op
+- [x] テスト: `enable_robonet=True` のとき `__init__()` でハートビートスレッドが起動する
+- [x] 確認: `docker-compose.yml` に `hostname: voyager_bot_N` が設定されている
+
+---
+
+### Phase 6-C: フロントエンド ダッシュボード 🔲
+
+**目的:** `/voyager` ページでボットのリアルタイムステータスを表示。
+
+**変更ファイル:**
+- `apps/web/src/app/(main)/voyager/page.tsx` — ダッシュボードページ（新規）
+- `apps/web/src/components/voyager/BotStatusCard.tsx` — ボットカードコンポーネント（新規）
+- `apps/web/src/components/voyager/BotStatusCard.stories.tsx` — Storybook story（必須）
+- `apps/web/src/types/index.ts` — `VoyagerBotStatus`, `VoyagerDashboardResponse` 型追加
+- `apps/web/src/lib/api.ts` — `getVoyagerStatus()` 追加
+
+**TDD チェックリスト:**
+- [ ] テスト: `alive: true` のとき ONLINE バッジが表示される
+- [ ] テスト: `alive: false` のとき OFFLINE バッジ + current_task がグレーアウト
+- [ ] テスト: `mc_connected` の値が MC アイコンに反映される
+- [ ] テスト: `last_episode: null` のとき "No recent episodes" が表示される
+- [ ] テスト: loading 中はスケルトンが表示される
+- [ ] Storybook: online / offline / loading / no-episodes バリアント
+- [ ] 実装: `page.tsx` / `BotStatusCard.tsx` / 型定義 / `api.ts`
+
+---
+
 ## コミュニティ機能ロードマップ
 
 > **注意:** 以下の Community A〜D は Voyager 統合の Phase 1〜5 とは別ロードマップ。番号衝突を避けるためアルファベット表記にしている。
@@ -167,13 +234,18 @@ Step 0 → Step 1 → Step 2 → Step 3 ← ─ ─ ─ ─ ─ ─ ┘
 
 ### Community C: 本番デプロイ ✅ 完了
 - [x] GitHub Actions CI（`.github/workflows/ci.yml`）— API・Web・SDK テスト + DB/Redis サービスコンテナ
-- [x] GitHub Actions CD（`.github/workflows/deploy.yml`）— Railway + Vercel デプロイ
-- [x] Railway バックエンドデプロイ設定（`apps/api/railway.json`）— マイグレーション自動実行 + ヘルスチェック
+- [x] GitHub Actions CD（`.github/workflows/deploy.yml`）— ECR push + SSM デプロイ（API）/ Vercel（Web）
+- [x] `infra/Dockerfile.api` — Node.js 18-alpine、monorepo 対応ビルド
 - [x] Vercel フロントエンドデプロイ設定（`apps/web/vercel.json`）
 - [x] ヘルスチェックエンドポイント強化（DB + Redis 疎通確認）— TDD 10/10
 - [x] CORS を環境変数化（`ALLOWED_ORIGINS` で本番ドメイン設定可能）
 - [ ] Sentry エラートラッキング（DSN 取得後に追加）
-- [ ] モニタリング・アラート（Railway built-in で対応）
+- [ ] モニタリング・アラート（CloudWatch で対応）
+
+**デプロイ構成:**
+- API: GitHub Actions → ECR → AWS EC2（既存 VPC 内、RDS/Redis と同一ネットワーク）
+- Web: GitHub Actions → Vercel
+- Railway は使用しない（AWS Private Subnet の RDS と VPC が分離するため）
 
 ### Community D: エコシステム拡張
 - [ ] `robonet-sdk` PyPI 公開
