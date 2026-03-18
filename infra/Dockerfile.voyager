@@ -32,12 +32,11 @@ WORKDIR /app
 # Python dependencies
 # ─────────────────────────────────────────
 
-# Install Voyager Python package
-# Assumes the Voyager source is mounted or copied into /app/voyager
-# For production builds, replace with the published package:
-#   RUN pip install voyager
+# Copy our Voyager integration code (not a pip package — run directly)
 COPY voyager/ /app/voyager/
-RUN pip install --no-cache-dir -e /app/voyager || pip install --no-cache-dir voyager
+
+# Install httpx for robonet HTTP calls (also pulled in by the SDK, but explicit)
+RUN pip install --no-cache-dir "httpx>=0.27,<1"
 
 # Install RoboNet SDK from local path
 COPY packages/sdk /app/sdk
@@ -55,4 +54,4 @@ ENV PYTHONUNBUFFERED=1
 # ─────────────────────────────────────────
 # Entrypoint
 # ─────────────────────────────────────────
-CMD ["python", "-m", "voyager.main"]
+CMD ["python", "/app/voyager/main.py"]
