@@ -3,11 +3,14 @@ voyager/robonet/reporter.py
 
 VoyagerReporter: collect session data, post to RoboNet, manage
 pending_posts.jsonl buffer for offline resilience.
+Also manages the heartbeat background thread (Phase 6-B).
 """
 from __future__ import annotations
 
 import json
 import logging
+import threading
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 from uuid import uuid4
@@ -20,6 +23,7 @@ from .title_generator import generate_title
 logger = logging.getLogger(__name__)
 
 _PENDING_FILENAME = "pending_posts.jsonl"
+_HEARTBEAT_INTERVAL_SECONDS = 60
 
 
 class VoyagerReporter:
@@ -28,16 +32,69 @@ class VoyagerReporter:
     Usage:
         reporter = VoyagerReporter(identity=identity, ckpt_dir=ckpt_dir)
         reporter.flush_pending()   # call once on startup
+        reporter.start_heartbeat_loop()  # optional: start background heartbeat
         ...
         reporter.post_session(completed_tasks, failed_tasks, skills)
     """
 
-    def __init__(self, identity: RobotIdentity, ckpt_dir: str) -> None:
+    def __init__(self, identity: Optional[RobotIdentity], ckpt_dir: str) -> None:
         self.identity = identity
         self.ckpt_dir = ckpt_dir
         self._pending_path = Path(ckpt_dir) / _PENDING_FILENAME
+        self._heartbeat_thread: Optional[threading.Thread] = None
+        self._heartbeat_stop = threading.Event()
 
     # ── public API ─────────────────────────────────────────────────────────
+
+    def report_heartbeat(
+        self,
+        current_task: Optional[str] = None,
+        current_iteration: Optional[int] = None,
+        skills_count: Optional[int] = None,
+        mc_connected: bool = False,
+    ) -> None:
+        """Send a heartbeat to POST /voyager/heartbeat.
+
+        No-op when identity is None. Never raises.
+        """
+        if self.identity is None:
+            return
+
+        payload: dict = {
+            "robot_id": self.identity.robot_id,
+            "current_task": current_task,
+            "current_iteration": current_iteration,
+            "skills_count": skills_count,
+            "mc_connected": mc_connected,
+            "reported_at": datetime.now(timezone.utc).isoformat(),
+        }
+        url = f"{self.identity.robonet_base_url.rstrip('/')}/voyager/heartbeat"
+        headers = {
+            "Authorization": f"Bearer {self.identity.api_key}",
+            "Content-Type": "application/json",
+        }
+        try:
+            httpx.post(url, json=payload, headers=headers, timeout=10.0)
+        except Exception as exc:
+            logger.warning(f"RoboNet heartbeat failed (non-fatal): {exc}")
+
+    def start_heartbeat_loop(self, interval: int = _HEARTBEAT_INTERVAL_SECONDS) -> None:
+        """Start a background daemon thread that sends heartbeats every `interval` seconds."""
+        if self._heartbeat_thread is not None and self._heartbeat_thread.is_alive():
+            return
+
+        self._heartbeat_stop.clear()
+
+        def _loop() -> None:
+            while not self._heartbeat_stop.wait(timeout=interval):
+                self.report_heartbeat()
+
+        self._heartbeat_thread = threading.Thread(target=_loop, daemon=True)
+        self._heartbeat_thread.start()
+
+    def stop_heartbeat_loop(self) -> None:
+        """Signal the heartbeat thread to stop."""
+        self._heartbeat_stop.set()
 
     def post_session(
         self,
@@ -108,7 +165,7 @@ class VoyagerReporter:
             "task_category": "game/minecraft",
             "success": success,
             "completion_rate": completion_rate,
-            "lerobot_path": "",
+            "lerobot_path": f"voyager://{session_id}",
             "fps": 20,
             "modalities": ["text"],
             "title": title,
