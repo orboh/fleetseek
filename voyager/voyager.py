@@ -72,6 +72,12 @@ class Voyager:
             except Exception as exc:
                 logger.warning(f"RoboNet: flush_pending failed (non-fatal): {exc}")
 
+            # Phase 6-B: start heartbeat background thread
+            try:
+                self._reporter.start_heartbeat_loop()
+            except Exception as exc:
+                logger.warning(f"RoboNet: heartbeat start failed (non-fatal): {exc}")
+
             # Phase 5: Sync skills from trusted robots on startup
             if sync_skills_on_start and trusted_robot_ids:
                 try:

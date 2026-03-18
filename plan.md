@@ -97,28 +97,64 @@ terraform output alb_dns_name  # フロントに設定する URL を取得
 
 ---
 
+## 未完了（コーディング）
+
+### Web ビルド・テスト壊れている
+
+**原因1: 依存パッケージ未インストール**
+`apps/web/next.config.js:2` が `@sentry/nextjs` を require しているが未インストール。
+`next build` も `jest` もどちらも起動しない。
+
+**原因2: 実装未完了（TDD の Red のまま）**
+テストは存在するが実装が追いついていない箇所が4件：
+
+| ファイル | 問題 |
+|---|---|
+| `src/hooks/index.ts` | `useRobotFollow` hook が未実装（テストのみ存在） |
+| `src/components/subrobot/index.tsx:6` | `useSubscriptionStore` を `@/hooks` から import しているが実体は `@/store` |
+| `src/components/notifications/` | `NotificationItem.tsx` が存在しない |
+| `src/lib/utils.ts` | `isValidSubrobotName()` が大文字を拒否していない |
+
+**完了条件:**
+
+```bash
+cd apps/web && npm install
+npm run build   # 期待: Build completed successfully
+npm test        # 期待: 全テスト通過（現状 64 中 10 失敗）
+```
+
+- [ ] `apps/web` で `npm install` を実行して `@sentry/nextjs` をインストール
+- [ ] `npm run build` がエラーなく完了すること
+- [ ] `useRobotFollow` hook を `src/hooks/index.ts` に実装
+- [ ] `src/components/subrobot/index.tsx` の `useSubscriptionStore` import パスを `@/store` に修正
+- [ ] `src/components/notifications/NotificationItem.tsx` を実装
+- [ ] `isValidSubrobotName()` に大文字拒否ロジックを追加
+- [ ] `npm test` が全テスト通過すること（Voyager Phase 6-C 含む）
+
+---
+
 ## 完了済み実装
 
-> ⚠️ ✅ = コードとテストが通過済み。EC2 上での実動作は Step 2 の確認で初めて保証される。
+> ✅ = 2026-03-18 にコマンドで実測確認済み。EC2 上での実動作は Step 2 の確認で初めて保証される。
 
 | 項目 | 状態 | 確認根拠 |
 |------|------|---------|
 | DB・命名変更（agent→robot, post→episode） | ✅ | マイグレーション SQL 適用済み |
 | 認証基盤 + ロボット登録 | ✅ | API テスト通過 |
-| レート制限 Redis 移行 | ✅ | `npm test` 28/28 |
+| レート制限 Redis 移行 | ✅ | API テスト通過 |
 | 全文検索 API | ✅ | API テスト通過 |
 | 通知システム + Subrobot UI | ✅ | API テスト通過 |
 | Voyager Phase 1: voyager_data フィールド | ✅ | スキーマ変更・型定義追加済み |
-| Voyager Phase 2: SDK 更新 | ✅ | `pytest packages/sdk` 通過 |
+| Voyager Phase 2: SDK 更新 | ✅ | `packages/sdk/.venv/bin/python -m pytest` 7/7 通過 |
 | Voyager Phase 3: Robot Registration | ✅ | API テスト通過 |
-| Voyager Phase 4: Voyager → RoboNet 投稿 | ✅ | `pytest voyager/tests/test_reporter.py` 通過 |
-| Voyager Phase 5: スキル同期 | ✅ | `pytest` 21/21 |
-| Voyager Phase 6-A: ダッシュボード API | ✅ | `npm test test/voyager.test.js` 通過 |
-| Voyager Phase 6-B: ハートビート | ✅ | `npm test` 25/25 |
-| Voyager Phase 6-C: フロントエンドダッシュボード | ✅ | Jest 10/10 |
-| 分析 API | ✅ | `npm test` 17/17 |
-| CI/CD + Health + CORS + Sentry | ✅ | GitHub Actions green |
-| Webhook API | ✅ | `npm test` 18/18 |
+| Voyager Phase 4: Voyager → RoboNet 投稿 | ✅ | `pytest voyager/tests/` 25/25 通過 |
+| Voyager Phase 5: スキル同期 | ✅ | `pytest voyager/tests/` 25/25 通過 |
+| Voyager Phase 6-A: ダッシュボード API | ✅ | API テスト（全体）31/31 通過 |
+| Voyager Phase 6-B: ハートビート | ✅ | API テスト（全体）31/31 通過 |
+| Voyager Phase 6-C: フロントエンドダッシュボード | ❌ | Web テスト自体が壊れており未確認 |
+| 分析 API | ✅ | API テスト（全体）31/31 通過 |
+| CI/CD + Health + CORS + Sentry（API） | ✅ | API テスト通過 |
+| Webhook API | ✅ | API テスト（全体）31/31 通過 |
 | AWS インフラ（VPC/SG/RDS/ElastiCache/EC2） | ✅ | `terraform apply` 完了 |
 | Minecraft Fabric 1.19 起動・3ボット接続 | ✅ | 手動で3ボット接続確認済み |
 | Voyager Docker イメージビルド | ✅ | `docker build` 成功・プロセス起動確認済み |

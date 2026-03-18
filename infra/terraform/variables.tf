@@ -42,3 +42,9 @@ variable "nebius_base_url" {
   description = "Nebius API base URL (OpenAI-compatible endpoint)"
   type        = string
 }
+
+variable "alert_email" {
+  description = "Email address to receive CloudWatch alarm notifications (empty = no email subscription)"
+  type        = string
+  default     = ""
+}

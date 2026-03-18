@@ -1,8 +1,9 @@
-"""Tests for voyager/robonet/reporter.py – Phase 4 TDD."""
+"""Tests for voyager/robonet/reporter.py – Phase 4 & 6-B TDD."""
 from __future__ import annotations
 
 import json
 import sys
+import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -17,6 +18,7 @@ from robonet.reporter import VoyagerReporter
 
 BASE_URL = "http://test-api/api/v1"
 EPISODES_URL = f"{BASE_URL}/episodes"
+HEARTBEAT_URL = f"{BASE_URL}/voyager/heartbeat"
 
 IDENTITY = RobotIdentity(
     robot_id="robot-uuid-001",
@@ -192,3 +194,73 @@ def test_learn_returns_correct_result_even_if_hook_raises(tmp_path):
     assert isinstance(result, dict)
     assert result["completed_tasks"] == ["task_a", "task_b"]
     assert result["failed_tasks"] == ["task_c"]
+
+
+# ── Phase 6-B: report_heartbeat() ────────────────────────────────────────────
+
+
+def test_report_heartbeat_sends_correct_payload(tmp_path):
+    """report_heartbeat() が正しいペイロードを /voyager/heartbeat に送る。"""
+    reporter = VoyagerReporter(identity=IDENTITY, ckpt_dir=str(tmp_path))
+
+    with respx.mock:
+        mock_route = respx.post(HEARTBEAT_URL).mock(return_value=httpx.Response(204))
+        reporter.report_heartbeat(
+            current_task="Mine iron ore",
+            current_iteration=7,
+            skills_count=14,
+            mc_connected=True,
+        )
+
+    assert mock_route.called, "report_heartbeat should POST to /voyager/heartbeat"
+    payload = json.loads(mock_route.calls[0].request.content)
+    assert payload["robot_id"] == IDENTITY.robot_id
+    assert payload["current_task"] == "Mine iron ore"
+    assert payload["current_iteration"] == 7
+    assert payload["skills_count"] == 14
+    assert payload["mc_connected"] is True
+    assert "reported_at" in payload
+
+
+def test_report_heartbeat_does_not_propagate_exception(tmp_path):
+    """report_heartbeat() は失敗しても例外を伝播しない。"""
+    reporter = VoyagerReporter(identity=IDENTITY, ckpt_dir=str(tmp_path))
+
+    with respx.mock:
+        respx.post(HEARTBEAT_URL).mock(side_effect=httpx.ConnectError("refused"))
+        # must not raise
+        reporter.report_heartbeat(
+            current_task="task",
+            current_iteration=1,
+            skills_count=0,
+            mc_connected=False,
+        )
+
+
+def test_report_heartbeat_noop_when_identity_none(tmp_path):
+    """identity が None のとき report_heartbeat() は no-op (HTTP 送信なし)。"""
+    reporter = VoyagerReporter(identity=None, ckpt_dir=str(tmp_path))
+
+    with respx.mock:
+        respx.post(HEARTBEAT_URL).mock(return_value=httpx.Response(204))
+        reporter.report_heartbeat(current_task="task")
+
+    # respx will raise if an unexpected call is made; reaching here means no call occurred.
+
+
+def test_heartbeat_thread_starts_on_enable_robonet(tmp_path):
+    """enable_robonet=True のとき __init__() でハートビートスレッドが起動する。"""
+    from voyager import Voyager
+
+    with patch("robonet.identity.load_or_register", return_value=IDENTITY):
+        voyager = Voyager(
+            ckpt_dir=str(tmp_path),
+            robonet_base_url=BASE_URL,
+            enable_robonet=True,
+        )
+
+    assert voyager._reporter is not None
+    thread = getattr(voyager._reporter, "_heartbeat_thread", None)
+    assert thread is not None, "_heartbeat_thread should be set"
+    assert thread.is_alive(), "Heartbeat thread should be running"
+    assert thread.daemon, "Heartbeat thread must be a daemon thread"

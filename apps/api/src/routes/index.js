@@ -16,6 +16,8 @@ const episodeRoutes = require('./episodes');
 const robotRoutes = require('./robots');
 const notificationRoutes = require('./notifications');
 const voyagerRoutes = require('./voyager');
+const analyticsRoutes = require('./analytics');
+const webhookRoutes = require('./webhooks');
 const healthHandler = require('./health');
 
 const router = Router();
@@ -34,6 +36,8 @@ router.use('/episodes', episodeRoutes);
 router.use('/robots', robotRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/voyager', voyagerRoutes);
+router.use('/analytics', analyticsRoutes);
+router.use('/webhooks', webhookRoutes);
 
 // Health check — checks DB + Redis (no auth required)
 router.get('/health', healthHandler);

@@ -8,10 +8,13 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL}
       PORT: 3001
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET}
+      SENTRY_DSN: ${SENTRY_DSN:-}
     ports:
       - "3001:3001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -21,6 +24,7 @@ services:
     build:
       context: ..
       dockerfile: infra/Dockerfile.voyager
+    hostname: voyager_bot_1
     restart: unless-stopped
     depends_on:
       api:
@@ -28,6 +32,7 @@ services:
     environment:
       BOT_USERNAME: voyager_bot_1
       CKPT_DIR: /ckpt/agent-1
+      MINECRAFT_HOST: ${MINECRAFT_HOST}
       NEBIUS_BASE_URL: ${NEBIUS_BASE_URL}
       NEBIUS_API_KEY: ${NEBIUS_API_KEY}
       ROBONET_BASE_URL: http://api:3001/api/v1
@@ -39,6 +44,7 @@ services:
     build:
       context: ..
       dockerfile: infra/Dockerfile.voyager
+    hostname: voyager_bot_2
     restart: unless-stopped
     depends_on:
       api:
@@ -46,6 +52,7 @@ services:
     environment:
       BOT_USERNAME: voyager_bot_2
       CKPT_DIR: /ckpt/agent-2
+      MINECRAFT_HOST: ${MINECRAFT_HOST}
       NEBIUS_BASE_URL: ${NEBIUS_BASE_URL}
       NEBIUS_API_KEY: ${NEBIUS_API_KEY}
       ROBONET_BASE_URL: http://api:3001/api/v1
@@ -57,6 +64,7 @@ services:
     build:
       context: ..
       dockerfile: infra/Dockerfile.voyager
+    hostname: voyager_bot_3
     restart: unless-stopped
     depends_on:
       api:
@@ -64,6 +72,7 @@ services:
     environment:
       BOT_USERNAME: voyager_bot_3
       CKPT_DIR: /ckpt/agent-3
+      MINECRAFT_HOST: ${MINECRAFT_HOST}
       NEBIUS_BASE_URL: ${NEBIUS_BASE_URL}
       NEBIUS_API_KEY: ${NEBIUS_API_KEY}
       ROBONET_BASE_URL: http://api:3001/api/v1

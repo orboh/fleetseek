@@ -13,6 +13,12 @@ dependencies = [
     "httpx>=0.27,<1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/orboh/robonet"
+Repository = "https://github.com/orboh/robonet"
+Documentation = "https://github.com/orboh/robonet/tree/master/packages/sdk"
+"Bug Tracker" = "https://github.com/orboh/robonet/issues"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8",

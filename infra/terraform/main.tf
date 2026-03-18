@@ -7,6 +7,14 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  backend "s3" {
+    bucket         = "robonet-tfstate"
+    key            = "infra/terraform.tfstate"
+    region         = "ap-northeast-1"
+    dynamodb_table = "robonet-tfstate-lock"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
@@ -180,6 +188,14 @@ resource "aws_security_group" "voyager" {
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = [var.admin_cidr]
+  }
+
+  ingress {
+    description     = "API from ALB"
+    from_port       = 3001
+    to_port         = 3001
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
   }
 
   egress {

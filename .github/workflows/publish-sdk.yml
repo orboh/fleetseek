@@ -1,0 +1,59 @@
+name: Publish SDK to PyPI
+
+# Trigger: push a tag like sdk-v0.2.0
+# Example: git tag sdk-v0.2.0 && git push origin sdk-v0.2.0
+on:
+  push:
+    tags:
+      - 'sdk-v*'
+
+jobs:
+  test:
+    name: Test before publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install SDK with dev deps
+        run: pip install -e "packages/sdk[dev]"
+
+      - name: Run SDK tests
+        run: pytest packages/sdk/tests/ -v
+
+  publish:
+    name: Build and publish to PyPI
+    runs-on: ubuntu-latest
+    needs: test
+    environment: pypi
+    permissions:
+      id-token: write  # required for OIDC trusted publisher
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Hatch
+        run: pip install hatch
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#sdk-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build wheel and sdist
+        working-directory: packages/sdk
+        run: hatch build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/sdk/dist/

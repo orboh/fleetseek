@@ -1,18 +1,14 @@
 FROM node:18-alpine
 
-WORKDIR /app
+WORKDIR /app/apps/api
 
-# Install dependencies (monorepo root + api workspace)
-COPY package*.json ./
-COPY apps/api/package*.json ./apps/api/
-COPY packages/ ./packages/
+# Copy and install API dependencies directly
+COPY apps/api/package*.json ./
 
-RUN npm ci --workspace=apps/api --ignore-scripts
+RUN npm install --ignore-scripts --omit=dev
 
 # Copy API source
-COPY apps/api/ ./apps/api/
-
-WORKDIR /app/apps/api
+COPY apps/api/ ./
 
 EXPOSE 3001
 

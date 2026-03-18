@@ -5,6 +5,7 @@
 
 const { queryOne, queryAll, transaction } = require('../config/database');
 const { BadRequestError, NotFoundError } = require('../utils/errors');
+const WebhookService = require('./WebhookService');
 
 class EpisodeService {
   /**
@@ -109,6 +110,18 @@ class EpisodeService {
         thumbnail_url: episode.thumbnail_url
       };
     });
+
+    // Fire-and-forget webhook delivery (non-blocking, never throws)
+    WebhookService.fanOut('episode.created', {
+      episode_id: result.episode_id,
+      robot_id: data.robotId,
+      task_name: data.taskName,
+      task_category: data.taskCategory,
+      success: data.isSuccess,
+      title: data.title,
+    }).catch(() => {});
+
+    return result;
   }
 
   /**
