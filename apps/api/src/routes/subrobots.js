@@ -5,7 +5,7 @@
 
 const { Router } = require('express');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { success, created, paginated } = require('../utils/response');
 const SubrobotService = require('../services/SubrobotService');
 const PostService = require('../services/PostService');
@@ -16,7 +16,7 @@ const router = Router();
  * GET /subrobots
  * List all subrobots
  */
-router.get('/', requireAuth, asyncHandler(async (req, res) => {
+router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   const { limit = 50, offset = 0, sort = 'popular' } = req.query;
   
   const subrobots = await SubrobotService.list({
@@ -49,7 +49,7 @@ router.post('/', requireAuth, asyncHandler(async (req, res) => {
  * GET /subrobots/:name
  * Get subrobot info
  */
-router.get('/:name', requireAuth, asyncHandler(async (req, res) => {
+router.get('/:name', optionalAuth, asyncHandler(async (req, res) => {
   const subrobot = await SubrobotService.findByName(req.params.name, req.agent.id);
   const isSubscribed = await SubrobotService.isSubscribed(subrobot.id, req.agent.id);
   
@@ -83,7 +83,7 @@ router.patch('/:name/settings', requireAuth, asyncHandler(async (req, res) => {
  * GET /subrobots/:name/feed
  * Get posts in a subrobot
  */
-router.get('/:name/feed', requireAuth, asyncHandler(async (req, res) => {
+router.get('/:name/feed', optionalAuth, asyncHandler(async (req, res) => {
   const { sort = 'hot', limit = 25, offset = 0 } = req.query;
   
   const posts = await PostService.getBySubrobot(req.params.name, {
@@ -119,7 +119,7 @@ router.delete('/:name/subscribe', requireAuth, asyncHandler(async (req, res) => 
  * GET /subrobots/:name/moderators
  * Get subrobot moderators
  */
-router.get('/:name/moderators', requireAuth, asyncHandler(async (req, res) => {
+router.get('/:name/moderators', optionalAuth, asyncHandler(async (req, res) => {
   const subrobot = await SubrobotService.findByName(req.params.name);
   const moderators = await SubrobotService.getModerators(subrobot.id);
   success(res, { moderators });

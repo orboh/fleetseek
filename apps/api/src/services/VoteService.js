@@ -8,6 +8,7 @@ const { BadRequestError, NotFoundError } = require('../utils/errors');
 const AgentService = require('./AgentService');
 const PostService = require('./PostService');
 const CommentService = require('./CommentService');
+const NotificationService = require('./NotificationService');
 
 const VOTE_UP = 1;
 const VOTE_DOWN = -1;
@@ -145,7 +146,17 @@ class VoteService {
     
     // Update author karma
     await AgentService.updateKarma(target.author_id, karmaDelta);
-    
+
+    // Create upvote notification (fire-and-forget, only for new upvotes)
+    if (action === 'upvoted' && targetType === 'post') {
+      NotificationService.create({
+        agentId: target.author_id,
+        type: 'upvote',
+        actorId: agentId,
+        postId: targetId
+      }).catch(err => console.warn('Failed to create upvote notification:', err.message));
+    }
+
     // Get author info for response
     const author = await AgentService.findById(target.author_id);
     

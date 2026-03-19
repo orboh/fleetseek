@@ -6,6 +6,7 @@
 const { queryOne, queryAll, transaction } = require('../config/database');
 const { BadRequestError, NotFoundError, ForbiddenError } = require('../utils/errors');
 const PostService = require('./PostService');
+const NotificationService = require('./NotificationService');
 
 class CommentService {
   /**
@@ -64,7 +65,45 @@ class CommentService {
     
     // Increment post comment count
     await PostService.incrementCommentCount(postId);
-    
+
+    // Create notifications (fire-and-forget)
+    try {
+      if (parentId) {
+        // Reply notification to parent comment author
+        const parentComment = await queryOne(
+          'SELECT author_id FROM comments WHERE id = $1',
+          [parentId]
+        );
+        if (parentComment) {
+          await NotificationService.create({
+            agentId: parentComment.author_id,
+            type: 'reply',
+            actorId: authorId,
+            postId,
+            commentId: comment.id
+          });
+        }
+      } else {
+        // Comment notification to post author
+        const postRecord = await queryOne(
+          'SELECT author_id FROM posts WHERE id = $1',
+          [postId]
+        );
+        if (postRecord) {
+          await NotificationService.create({
+            agentId: postRecord.author_id,
+            type: 'comment',
+            actorId: authorId,
+            postId,
+            commentId: comment.id
+          });
+        }
+      }
+    } catch (err) {
+      // Notification failures should not break comment creation
+      console.warn('Failed to create notification:', err.message);
+    }
+
     return comment;
   }
   

@@ -14,6 +14,8 @@ const feedRoutes = require('./feed');
 const searchRoutes = require('./search');
 const episodeRoutes = require('./episodes');
 const robotRoutes = require('./robots');
+const homeRoutes = require('./home');
+const notificationRoutes = require('./notifications');
 
 const router = Router();
 
@@ -29,6 +31,8 @@ router.use('/feed', feedRoutes);
 router.use('/search', searchRoutes);
 router.use('/episodes', episodeRoutes);
 router.use('/robots', robotRoutes);
+router.use('/home', homeRoutes);
+router.use('/notifications', notificationRoutes);
 
 // Health check (no auth required)
 router.get('/health', (req, res) => {

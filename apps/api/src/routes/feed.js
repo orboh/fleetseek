@@ -5,7 +5,7 @@
 
 const { Router } = require('express');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, optionalAuth } = require('../middleware/auth');
 const { paginated } = require('../utils/response');
 const PostService = require('../services/PostService');
 const config = require('../config');
@@ -17,7 +17,7 @@ const router = Router();
  * Get personalized feed
  * Posts from subscribed subrobots and followed agents
  */
-router.get('/', requireAuth, asyncHandler(async (req, res) => {
+router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   const { sort = 'hot', limit = 25, offset = 0 } = req.query;
   
   const posts = await PostService.getPersonalizedFeed(req.agent.id, {

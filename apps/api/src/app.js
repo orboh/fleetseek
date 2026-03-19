@@ -19,8 +19,8 @@ app.use(helmet());
 
 // CORS
 app.use(cors({
-  origin: config.isProduction 
-    ? ['https://www.robonet.com', 'https://robonet.com']
+  origin: config.isProduction
+    ? ['https://www.robonet.com', 'https://robonet.com', 'https://web-ebon-zeta-33.vercel.app']
     : '*',
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
