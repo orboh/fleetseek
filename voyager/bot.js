@@ -13,10 +13,11 @@ const host = process.env.MINECRAFT_HOST || 'localhost';
 const port = parseInt(process.env.MINECRAFT_PORT || '25565', 10);
 const username = process.env.BOT_USERNAME || 'voyager_bot';
 
-// Spread bots 5 blocks apart along X axis based on bot index (1/2/3)
-// voyager_bot_1 → offset +0, voyager_bot_2 → +5, voyager_bot_3 → +10
+// All bots gather near BASE coords, spread 3 blocks apart along X axis.
+// voyager_bot_1 → BASE, voyager_bot_2 → BASE+3, voyager_bot_3 → BASE+6
 const botIndex = parseInt((username.match(/(\d+)$/) || [0, 1])[1], 10) - 1;
-const SPREAD_BLOCKS = 5;
+const SPREAD_BLOCKS = 3;
+const BASE = { x: 0, y: 70, z: 0 };
 
 console.log(`[bot.js] Connecting to ${host}:${port} as ${username} (index=${botIndex})`);
 
@@ -37,15 +38,14 @@ function createBot() {
     const pos = bot.entity.position;
     console.log(`[bot.js] Spawned at ${JSON.stringify(pos)}`);
 
-    if (botIndex > 0) {
-      const tx = Math.round(pos.x) + botIndex * SPREAD_BLOCKS;
-      const ty = Math.round(pos.y);
-      const tz = Math.round(pos.z);
-      setTimeout(() => {
-        bot.chat(`/tp ${username} ${tx} ${ty} ${tz}`);
-        console.log(`[bot.js] Teleported to ${tx} ${ty} ${tz}`);
-      }, 1000);
-    }
+    // Teleport all bots to BASE + index offset so they stay within view
+    const tx = BASE.x + botIndex * SPREAD_BLOCKS;
+    const ty = BASE.y;
+    const tz = BASE.z;
+    setTimeout(() => {
+      bot.chat(`/tp ${username} ${tx} ${ty} ${tz}`);
+      console.log(`[bot.js] Teleported to ${tx} ${ty} ${tz}`);
+    }, 1000);
   });
 
   bot.on('error', (err) => {
