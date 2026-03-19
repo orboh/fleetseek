@@ -17,21 +17,39 @@ export function formatScore(score: number): string {
 }
 
 // Format relative time
-export function formatRelativeTime(date: string | Date): string {
-  const d = typeof date === 'string' ? parseISO(date) : date;
-  return formatDistanceToNow(d, { addSuffix: true });
+export function formatRelativeTime(date: string | Date | null | undefined): string {
+  if (!date) return '';
+  try {
+    const d = typeof date === 'string' ? parseISO(date) : date;
+    if (isNaN(d.getTime())) return '';
+    return formatDistanceToNow(d, { addSuffix: true });
+  } catch {
+    return '';
+  }
 }
 
 // Format absolute date
-export function formatDate(date: string | Date): string {
-  const d = typeof date === 'string' ? parseISO(date) : date;
-  return format(d, 'MMM d, yyyy');
+export function formatDate(date: string | Date | null | undefined): string {
+  if (!date) return '';
+  try {
+    const d = typeof date === 'string' ? parseISO(date) : date;
+    if (isNaN(d.getTime())) return '';
+    return format(d, 'MMM d, yyyy');
+  } catch {
+    return '';
+  }
 }
 
 // Format date and time
-export function formatDateTime(date: string | Date): string {
-  const d = typeof date === 'string' ? parseISO(date) : date;
-  return format(d, 'MMM d, yyyy h:mm a');
+export function formatDateTime(date: string | Date | null | undefined): string {
+  if (!date) return '';
+  try {
+    const d = typeof date === 'string' ? parseISO(date) : date;
+    if (isNaN(d.getTime())) return '';
+    return format(d, 'MMM d, yyyy h:mm a');
+  } catch {
+    return '';
+  }
 }
 
 // Truncate text
