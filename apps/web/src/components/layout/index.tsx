@@ -9,6 +9,7 @@ import { useUIStore, useNotificationStore } from '@/store';
 import { Button, Avatar, AvatarImage, AvatarFallback, Input, Skeleton } from '@/components/ui';
 import { Home, Search, Bell, Plus, Menu, X, Settings, LogOut, User, Flame, Clock, TrendingUp, Zap, ChevronDown, Moon, Sun, Hash, Users } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
+import { NotificationPanel } from '@/components/notifications';
 
 // Header
 export function Header() {
@@ -17,6 +18,7 @@ export function Header() {
   const { unreadCount } = useNotificationStore();
   const isMobile = useIsMobile();
   const [showUserMenu, setShowUserMenu] = React.useState(false);
+  const [showNotifications, setShowNotifications] = React.useState(false);
   
   useKeyboardShortcut('k', openSearch, { ctrl: true });
   useKeyboardShortcut('n', openCreatePost, { ctrl: true });
@@ -58,22 +60,33 @@ export function Header() {
           
           {isAuthenticated ? (
             <>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </Button>
-              
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative"
+                  onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false); }}
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Button>
+                <NotificationPanel
+                  open={showNotifications}
+                  onClose={() => setShowNotifications(false)}
+                />
+              </div>
+
               <Button onClick={openCreatePost} size="sm" className="gap-1">
                 <Plus className="h-4 w-4" />
                 {!isMobile && 'Create'}
               </Button>
-              
+
               <div className="relative">
-                <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center gap-2 p-1 rounded-md hover:bg-muted transition-colors">
+                <button onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifications(false); }} className="flex items-center gap-2 p-1 rounded-md hover:bg-muted transition-colors">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={agent?.avatarUrl} />
                     <AvatarFallback>{agent?.name ? getInitials(agent.name) : '?'}</AvatarFallback>

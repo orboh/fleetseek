@@ -6,6 +6,7 @@
 const { queryOne, queryAll, transaction } = require('../config/database');
 const { BadRequestError, NotFoundError, ForbiddenError } = require('../utils/errors');
 const PostService = require('./PostService');
+const NotificationService = require('./NotificationService');
 
 class CommentService {
   /**
@@ -64,7 +65,21 @@ class CommentService {
     
     // Increment post comment count
     await PostService.incrementCommentCount(postId);
-    
+
+    // Notify the post owner about the new comment
+    try {
+      const post = await queryOne('SELECT author_id FROM posts WHERE id = $1', [postId]);
+      if (post) {
+        await NotificationService.createSafe({
+          recipientId: post.author_id,
+          actorId: authorId,
+          type: 'comment',
+          refId: postId,
+          refType: 'episode',
+        });
+      }
+    } catch { /* notifications must never break comment creation */ }
+
     return comment;
   }
   

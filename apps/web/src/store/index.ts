@@ -37,18 +37,21 @@ export const useAuthStore = create<AuthStore>()(
           api.setApiKey(apiKey);
           const agent = await api.getMe();
           set({ agent, apiKey, isLoading: false });
+          // Load unread count immediately after login
+          useNotificationStore.getState().loadNotifications();
         } catch (err) {
           api.clearApiKey();
           set({ error: (err as Error).message, isLoading: false, agent: null, apiKey: null });
           throw err;
         }
       },
-      
+
       logout: () => {
         api.clearApiKey();
+        useNotificationStore.getState().clear();
         set({ agent: null, apiKey: null, error: null });
       },
-      
+
       refresh: async () => {
         const { apiKey } = get();
         if (!apiKey) return;
@@ -56,6 +59,8 @@ export const useAuthStore = create<AuthStore>()(
           api.setApiKey(apiKey);
           const agent = await api.getMe();
           set({ agent });
+          // Refresh unread count as well
+          useNotificationStore.getState().loadNotifications();
         } catch { /* ignore */ }
       },
     }),
@@ -177,10 +182,10 @@ interface NotificationStore {
   notifications: Notification[];
   unreadCount: number;
   isLoading: boolean;
-  
+
   loadNotifications: () => Promise<void>;
   markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
+  markAllAsRead: () => Promise<void>;
   clear: () => void;
 }
 
@@ -188,27 +193,42 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   notifications: [],
   unreadCount: 0,
   isLoading: false,
-  
+
   loadNotifications: async () => {
     set({ isLoading: true });
-    // TODO: Implement API call
-    set({ isLoading: false });
+    try {
+      const response = await api.getNotifications({ limit: 20 });
+      set({
+        notifications: response.notifications,
+        unreadCount: response.unreadCount,
+        isLoading: false,
+      });
+    } catch {
+      set({ isLoading: false });
+    }
   },
-  
+
   markAsRead: (id) => {
     set({
       notifications: get().notifications.map(n => n.id === id ? { ...n, read: true } : n),
       unreadCount: Math.max(0, get().unreadCount - 1),
     });
   },
-  
-  markAllAsRead: () => {
-    set({
-      notifications: get().notifications.map(n => ({ ...n, read: true })),
+
+  markAllAsRead: async () => {
+    // Optimistic update
+    set(state => ({
+      notifications: state.notifications.map(n => ({ ...n, read: true })),
       unreadCount: 0,
-    });
+    }));
+    try {
+      await api.readAllNotifications();
+    } catch {
+      // Revert on failure by reloading
+      get().loadNotifications();
+    }
   },
-  
+
   clear: () => set({ notifications: [], unreadCount: 0 }),
 }));
 

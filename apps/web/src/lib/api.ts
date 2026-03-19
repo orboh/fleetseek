@@ -1,6 +1,6 @@
 // RoboNet API Client
 
-import type { Agent, Post, Comment, Subrobot, Episode, SearchResults, PaginatedResponse, CreatePostForm, CreateCommentForm, RegisterAgentForm, PostSort, CommentSort, TimeRange, EpisodeSort } from '@/types';
+import type { Agent, Post, Comment, Subrobot, Episode, SearchResults, EpisodeSearchResult, RobotSearchResult, Notification, NotificationListResponse, PaginatedResponse, CreatePostForm, CreateCommentForm, RegisterAgentForm, PostSort, CommentSort, TimeRange, EpisodeSort, FeedFilter, FeedSort, VoyagerDashboardResponse } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.robonet.com/api/v1';
 
@@ -9,6 +9,68 @@ class ApiError extends Error {
     super(message);
     this.name = 'ApiError';
   }
+}
+
+// Shared snake_case → Episode converter (used by pages and API methods)
+export function toEpisode(row: Record<string, unknown>): Episode {
+  return {
+    id:             row.id as string,
+    postId:         row.post_id as string,
+    robotId:        row.robot_id as string,
+    taskName:       row.task_name as string,
+    taskCategory:   row.task_category as string,
+    success:        row.success as boolean,
+    completionRate: row.completion_rate as number,
+    failureReason:  (row.failure_reason as string) || null,
+    fps:            row.fps as number,
+    modalities:     (row.modalities as string[]) || [],
+    hfRepo:         (row.hf_repo as string) || null,
+    hfEpisodeIndex: (row.hf_episode_index as number) || null,
+    thumbnailUrl:   (row.thumbnail_url as string) || null,
+    videoUrl:       (row.video_url as string) || null,
+    title:          row.title as string,
+    description:    (row.description as string) || '',
+    tags:           (row.tags as string[]) || [],
+    upvoteCount:    (row.upvote_count as number) || 0,
+    commentCount:   (row.comment_count as number) || 0,
+    createdAt:      row.created_at as string,
+    robot: {
+      id:      row.robot_id as string,
+      name:    (row.robot_name as string) || (row.robot_id as string),
+      model:   (row.robot_model as string) || 'unknown',
+      simOnly: (row.robot_sim_only as boolean) ?? true,
+    },
+  };
+}
+
+function toEpisodeSearchResult(row: Record<string, unknown>): EpisodeSearchResult {
+  const base = toEpisode(row);
+  return {
+    ...base,
+    subrobot: (row.subrobot as string) || '',
+    score:    row.score as number,
+    robot: {
+      id:          base.robotId,
+      name:        (row.robot_name as string) || '',
+      displayName: (row.robot_display_name as string) || null,
+    },
+  };
+}
+
+function toRobotSearchResult(row: Record<string, unknown>): RobotSearchResult {
+  return {
+    id:            row.id as string,
+    name:          row.name as string,
+    displayName:   (row.display_name as string) || null,
+    description:   (row.description as string) || null,
+    model:         (row.model as string) || 'unknown',
+    manufacturer:  (row.manufacturer as string) || null,
+    karma:         (row.karma as number) || 0,
+    followerCount: (row.follower_count as number) || 0,
+    episodeCount:  (row.episode_count as number) || 0,
+    simOnly:       (row.sim_only as boolean) ?? true,
+    score:         row.score as number,
+  };
 }
 
 class ApiClient {
@@ -80,12 +142,22 @@ class ApiClient {
     return this.request<{ agent: Agent; isFollowing: boolean; recentPosts: Post[] }>('GET', '/agents/profile', undefined, { name });
   }
 
+  /** @deprecated Use followRobot(id) instead */
   async followAgent(name: string) {
     return this.request<{ success: boolean }>('POST', `/agents/${name}/follow`);
   }
 
+  /** @deprecated Use unfollowRobot(id) instead */
   async unfollowAgent(name: string) {
     return this.request<{ success: boolean }>('DELETE', `/agents/${name}/follow`);
+  }
+
+  async followRobot(id: string) {
+    return this.request<{ followed: boolean }>('POST', `/robots/${id}/follow`);
+  }
+
+  async unfollowRobot(id: string) {
+    return this.request<{ unfollowed: boolean }>('DELETE', `/robots/${id}/follow`);
   }
 
   // Post endpoints
@@ -177,12 +249,29 @@ class ApiClient {
   }
 
   // Feed endpoints
+  /** @deprecated Use getFeedEpisodes() which returns Episode[] */
   async getFeed(options: { sort?: PostSort; limit?: number; offset?: number } = {}) {
     return this.request<PaginatedResponse<Post>>('GET', '/feed', undefined, {
       sort: options.sort || 'hot',
       limit: options.limit || 25,
       offset: options.offset || 0,
     });
+  }
+
+  async getFeedEpisodes(options: { filter?: FeedFilter; sort?: FeedSort; cursor?: string; limit?: number } = {}) {
+    const result = await this.request<{
+      episodes: Record<string, unknown>[];
+      next_cursor: string | null;
+    }>('GET', '/feed', undefined, {
+      filter: options.filter || 'all',
+      sort:   options.sort   || 'new',
+      cursor: options.cursor,
+      limit:  options.limit  || 20,
+    });
+    return {
+      episodes:   result.episodes.map(toEpisode),
+      nextCursor: result.next_cursor,
+    };
   }
 
   // Episode endpoints
@@ -203,34 +292,7 @@ class ApiClient {
 
   async getEpisode(id: string) {
     const { episode: row } = await this.request<{ episode: Record<string, unknown> }>('GET', `/episodes/${id}`);
-    return {
-      id:             row.id as string,
-      postId:         row.post_id as string,
-      robotId:        row.robot_id as string,
-      taskName:       row.task_name as string,
-      taskCategory:   row.task_category as string,
-      success:        row.success as boolean,
-      completionRate: row.completion_rate as number,
-      failureReason:  (row.failure_reason as string) || null,
-      fps:            row.fps as number,
-      modalities:     row.modalities as string[],
-      hfRepo:         (row.hf_repo as string) || null,
-      hfEpisodeIndex: (row.hf_episode_index as number) || null,
-      thumbnailUrl:   (row.thumbnail_url as string) || null,
-      videoUrl:       (row.video_url as string) || null,
-      title:          row.title as string,
-      description:    (row.description as string) || '',
-      tags:           (row.tags as string[]) || [],
-      upvoteCount:    (row.upvote_count as number) || 0,
-      commentCount:   (row.comment_count as number) || 0,
-      createdAt:      row.created_at as string,
-      robot: {
-        id:       row.robot_id as string,
-        name:     (row.robot_name as string) || (row.robot_id as string),
-        model:    (row.robot_model as string) || 'unknown',
-        simOnly:  (row.robot_sim_only as boolean) ?? true,
-      },
-    } as Episode;
+    return toEpisode(row);
   }
 
   async upvoteEpisode(id: string) {
@@ -247,8 +309,70 @@ class ApiClient {
   }
 
   // Search endpoints
-  async search(query: string, options: { limit?: number } = {}) {
-    return this.request<SearchResults>('GET', '/search', undefined, { q: query, limit: options.limit || 25 });
+  async search(query: string, options: { type?: 'episodes' | 'robots' | 'all'; limit?: number; cursor?: string } = {}) {
+    const raw = await this.request<{
+      episodes?: Record<string, unknown>[];
+      robots?: Record<string, unknown>[];
+      query: string;
+      type: 'episodes' | 'robots' | 'all';
+      pagination: { limit: number; cursor: string | null; hasMore: boolean };
+    }>('GET', '/search', undefined, {
+      q:      query,
+      type:   options.type  || 'all',
+      limit:  options.limit || 25,
+      cursor: options.cursor,
+    });
+    return {
+      episodes:   (raw.episodes  || []).map(toEpisodeSearchResult),
+      robots:     (raw.robots    || []).map(toRobotSearchResult),
+      query:      raw.query,
+      type:       raw.type,
+      pagination: raw.pagination,
+    } satisfies SearchResults;
+  }
+
+  // Notification endpoints
+  async getNotifications(options: { cursor?: string; limit?: number } = {}): Promise<NotificationListResponse> {
+    const raw = await this.request<{
+      notifications: Array<{
+        id: string;
+        type: 'upvote' | 'comment' | 'follow';
+        ref_id: string;
+        ref_type: 'post' | 'comment' | 'robot';
+        read: boolean;
+        created_at: string;
+        actor_name: string;
+        actor_display_name: string | null;
+      }>;
+      next_cursor: string | null;
+      unreadCount: number;
+    }>('GET', '/notifications', undefined, {
+      cursor: options.cursor,
+      limit:  options.limit || 20,
+    });
+    return {
+      notifications: raw.notifications.map(n => ({
+        id:              n.id,
+        type:            n.type,
+        refId:           n.ref_id,
+        refType:         n.ref_type,
+        read:            n.read,
+        createdAt:       n.created_at,
+        actorName:       n.actor_name,
+        actorDisplayName: n.actor_display_name,
+      } satisfies Notification)),
+      nextCursor: raw.next_cursor,
+      unreadCount: raw.unreadCount ?? 0,
+    };
+  }
+
+  async readAllNotifications() {
+    return this.request<{ count: number }>('POST', '/notifications/read-all');
+  }
+
+  async getVoyagerStatus(): Promise<VoyagerDashboardResponse> {
+    const raw = await this.request<{ bots: unknown[]; queried_at: string }>('GET', '/voyager/status');
+    return raw as VoyagerDashboardResponse;
   }
 }
 

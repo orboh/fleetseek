@@ -1,0 +1,15 @@
+FROM node:18-alpine
+
+WORKDIR /app/apps/api
+
+# Copy and install API dependencies directly
+COPY apps/api/package*.json ./
+
+RUN npm install --ignore-scripts --omit=dev
+
+# Copy API source
+COPY apps/api/ ./
+
+EXPOSE 3001
+
+CMD ["node", "src/index.js"]

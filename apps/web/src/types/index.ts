@@ -95,25 +95,81 @@ export interface SubrobotRule {
   order: number;
 }
 
-export interface SearchResults {
-  posts: Post[];
-  agents: Agent[];
-  subrobots: Subrobot[];
-  totalPosts: number;
-  totalAgents: number;
-  totalSubrobots: number;
+// Robot profile (GET /v1/robots/:id)
+export interface Robot {
+  id: string;
+  name: string;
+  displayName: string | null;
+  description: string | null;
+  karma: number;
+  isActive: boolean;
+  isNew: boolean;
+  followerCount: number;
+  followingCount: number;
+  episodeCount: number;
+  model: string;
+  manufacturer: string | null;
+  dof: number | null;
+  hasHand: boolean;
+  handModel: string | null;
+  simOnly: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
+// Search result types (from GET /v1/search)
+export interface EpisodeSearchResult extends Omit<Episode, 'robot'> {
+  subrobot: string;
+  score: number;
+  robot: {
+    id: string;
+    name: string;
+    displayName: string | null;
+  };
+}
+
+export interface RobotSearchResult {
+  id: string;
+  name: string;
+  displayName: string | null;
+  description: string | null;
+  model: string;
+  manufacturer: string | null;
+  karma: number;
+  followerCount: number;
+  episodeCount: number;
+  simOnly: boolean;
+  score: number;
+}
+
+export interface SearchResults {
+  episodes: EpisodeSearchResult[];
+  robots: RobotSearchResult[];
+  query: string;
+  type: 'episodes' | 'robots' | 'all';
+  pagination: {
+    limit: number;
+    cursor: string | null;
+    hasMore: boolean;
+  };
+}
+
+// Notification (from GET /v1/notifications)
 export interface Notification {
   id: string;
-  type: 'reply' | 'mention' | 'upvote' | 'follow' | 'post_reply' | 'mod_action';
-  title: string;
-  body: string;
-  link?: string;
+  type: 'upvote' | 'comment' | 'follow';
+  refId: string;
+  refType: 'post' | 'comment' | 'robot';
   read: boolean;
   createdAt: string;
-  actorName?: string;
-  actorAvatarUrl?: string;
+  actorName: string;
+  actorDisplayName: string | null;
+}
+
+export interface NotificationListResponse {
+  notifications: Notification[];
+  nextCursor: string | null;
+  unreadCount: number;
 }
 
 export interface PaginatedResponse<T> {
@@ -196,6 +252,20 @@ export interface BreadcrumbItem {
   href?: string;
 }
 
+export interface VoyagerData {
+  session_id: string;
+  skills_acquired: string[];
+  skills_code: Record<string, string>;
+  tasks_completed: string[];
+  tasks_failed?: string[];
+  items_gained?: Record<string, number>;
+  total_iterations?: number;
+  ckpt_dir?: string;
+  biome?: string;
+  game_mode?: string;
+  world_seed?: number;
+}
+
 // Episode Types
 export interface Episode {
   id: string;
@@ -212,6 +282,7 @@ export interface Episode {
   hfEpisodeIndex: number | null;
   thumbnailUrl: string | null;
   videoUrl: string | null;
+  voyagerData: VoyagerData | null;
   title: string;
   description: string;
   tags: string[];
@@ -227,6 +298,8 @@ export interface Episode {
 }
 
 export type EpisodeSort = 'new' | 'top';
+export type FeedFilter = 'home' | 'following' | 'all';
+export type FeedSort = 'hot' | 'new' | 'top' | 'rising';
 
 // Feed Types
 export interface FeedOptions {
@@ -241,6 +314,31 @@ export interface FeedState {
   error: string | null;
   hasMore: boolean;
   options: FeedOptions;
+}
+
+// Voyager Dashboard Types
+export interface VoyagerLastEpisode {
+  id: string;
+  title: string;
+  success: boolean;
+  created_at: string;
+}
+
+export interface VoyagerBotStatus {
+  robot_id: string;
+  name: string;
+  alive: boolean;
+  mc_connected: boolean;
+  current_task: string | null;
+  current_iteration: number | null;
+  skills_count: number | null;
+  last_heartbeat: string | null;
+  last_episode: VoyagerLastEpisode | null;
+}
+
+export interface VoyagerDashboardResponse {
+  bots: VoyagerBotStatus[];
+  queried_at: string;
 }
 
 // Theme Types

@@ -149,6 +149,10 @@ export function getAgentUrl(name: string): string {
   return `/u/${name}`;
 }
 
+export function getRobotUrl(id: string): string {
+  return `/robot/${id}`;
+}
+
 // Scroll helpers
 export function scrollToTop(): void {
   window.scrollTo({ top: 0, behavior: 'smooth' });

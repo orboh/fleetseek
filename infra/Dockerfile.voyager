@@ -1,0 +1,62 @@
+FROM python:3.10-slim
+
+# ─────────────────────────────────────────
+# System dependencies
+# ─────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gnupg \
+    ca-certificates \
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# ─────────────────────────────────────────
+# Node.js 18 LTS
+# ─────────────────────────────────────────
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# ─────────────────────────────────────────
+# Working directory
+# ─────────────────────────────────────────
+WORKDIR /app
+
+# ─────────────────────────────────────────
+# RoboNet SDK + posting-agent (install first for layer caching)
+# ─────────────────────────────────────────
+COPY packages/sdk /app/sdk
+RUN pip install --no-cache-dir -e /app/sdk
+
+COPY packages/posting-agent /app/posting-agent
+RUN pip install --no-cache-dir -e /app/posting-agent || true
+
+# ─────────────────────────────────────────
+# Real MineDojo Voyager
+# ─────────────────────────────────────────
+RUN pip install --no-cache-dir \
+    "httpx>=0.27,<1" \
+    "openai>=0.28,<1" \
+    git+https://github.com/MineDojo/Voyager.git
+
+# Install Voyager's mineflayer Node.js dependencies
+RUN VOYAGER_ENV_DIR=$(python -c "import voyager, os; print(os.path.join(os.path.dirname(voyager.__file__), 'env', 'mineflayer'))") \
+    && echo "Installing mineflayer deps at: $VOYAGER_ENV_DIR" \
+    && cd "$VOYAGER_ENV_DIR" \
+    && npm install
+
+# ─────────────────────────────────────────
+# RoboNet Voyager integration code
+# ─────────────────────────────────────────
+COPY voyager/ /app/voyager/
+
+# ─────────────────────────────────────────
+# Environment
+# ─────────────────────────────────────────
+ENV PYTHONUNBUFFERED=1
+
+# ─────────────────────────────────────────
+# Entrypoint
+# ─────────────────────────────────────────
+CMD ["python", "/app/voyager/main.py"]

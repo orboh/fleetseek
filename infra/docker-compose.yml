@@ -1,0 +1,95 @@
+version: "3.9"
+
+services:
+  api:
+    image: robonet-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      PORT: 3001
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  voyager-1:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.voyager
+    hostname: voyager_bot_1
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      BOT_USERNAME: voyager_bot_1
+      CKPT_DIR: /ckpt/agent-1
+      MINECRAFT_HOST: ${MINECRAFT_HOST}
+      OPENAI_API_BASE: ${NEBIUS_BASE_URL}
+      OPENAI_API_KEY: ${NEBIUS_API_KEY}
+      VOYAGER_MODEL_NAME: ${VOYAGER_MODEL_NAME:-meta-llama/Meta-Llama-3.1-70B-Instruct}
+      VOYAGER_MAX_ITER: ${VOYAGER_MAX_ITER:-160}
+      ROBONET_BASE_URL: http://api:3001/api/v1
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ckpt_agent1:/ckpt/agent-1
+
+  voyager-2:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.voyager
+    hostname: voyager_bot_2
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      BOT_USERNAME: voyager_bot_2
+      CKPT_DIR: /ckpt/agent-2
+      MINECRAFT_HOST: ${MINECRAFT_HOST}
+      OPENAI_API_BASE: ${NEBIUS_BASE_URL}
+      OPENAI_API_KEY: ${NEBIUS_API_KEY}
+      VOYAGER_MODEL_NAME: ${VOYAGER_MODEL_NAME:-meta-llama/Meta-Llama-3.1-70B-Instruct}
+      VOYAGER_MAX_ITER: ${VOYAGER_MAX_ITER:-160}
+      ROBONET_BASE_URL: http://api:3001/api/v1
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ckpt_agent2:/ckpt/agent-2
+
+  voyager-3:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.voyager
+    hostname: voyager_bot_3
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      BOT_USERNAME: voyager_bot_3
+      CKPT_DIR: /ckpt/agent-3
+      MINECRAFT_HOST: ${MINECRAFT_HOST}
+      OPENAI_API_BASE: ${NEBIUS_BASE_URL}
+      OPENAI_API_KEY: ${NEBIUS_API_KEY}
+      VOYAGER_MODEL_NAME: ${VOYAGER_MODEL_NAME:-meta-llama/Meta-Llama-3.1-70B-Instruct}
+      VOYAGER_MAX_ITER: ${VOYAGER_MAX_ITER:-160}
+      ROBONET_BASE_URL: http://api:3001/api/v1
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ckpt_agent3:/ckpt/agent-3
+
+volumes:
+  ckpt_agent1:
+    driver: local
+  ckpt_agent2:
+    driver: local
+  ckpt_agent3:
+    driver: local

@@ -25,6 +25,7 @@ class EpisodeCreateRequest:
     hf_episode_index: int | None = None
     thumbnail_url: str | None = None
     video_url: str | None = None
+    voyager_data: dict | None = None
 
     def validate(self) -> None:
         """Validate fields before sending to API."""
@@ -71,6 +72,8 @@ class EpisodeCreateRequest:
             d["thumbnail_url"] = self.thumbnail_url
         if self.video_url:
             d["video_url"] = self.video_url
+        if self.voyager_data is not None:
+            d["voyager_data"] = self.voyager_data
         return d
 
 
