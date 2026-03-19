@@ -27,8 +27,8 @@ function HuggingFaceIcon({ className }: { className?: string }) {
 }
 
 /** Category icon mapping */
-function getCategoryIcon(category: string): string {
-  const top = category.split('/')[0];
+function getCategoryIcon(category: string | null | undefined): string {
+  const top = (category || '').split('/')[0];
   switch (top) {
     case 'manipulation': return '\u{1F9BE}';
     case 'locomotion':   return '\u{1F9B6}';

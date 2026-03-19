@@ -9,8 +9,8 @@ import { ArrowBigUp, MessageSquare, Download } from 'lucide-react';
 import type { Episode } from '@/types';
 
 /** Category icon mapping */
-function getCategoryIcon(category: string): string {
-  const top = category.split('/')[0];
+function getCategoryIcon(category: string | null | undefined): string {
+  const top = (category || '').split('/')[0];
   switch (top) {
     case 'manipulation': return '\u{1F9BE}';  // mechanical arm
     case 'locomotion':   return '\u{1F9B6}';  // foot
