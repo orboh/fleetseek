@@ -10,6 +10,9 @@ as a non-fatal side-effect of learn().
 from __future__ import annotations
 
 import logging
+import os
+import subprocess
+import sys
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -19,6 +22,8 @@ class Voyager:
     """Voyager lifelong-learning agent with optional RoboNet integration.
 
     RoboNet-related args (all optional, default off):
+        mc_host: Minecraft server hostname/IP.
+        mc_port: Minecraft server port.
         robonet_base_url: API base URL.
         enable_robonet: Whether to post sessions to RoboNet.
         sync_skills_on_start: (Phase 5) import trusted robot skills on init.
@@ -27,6 +32,8 @@ class Voyager:
 
     def __init__(
         self,
+        mc_host: str = "localhost",
+        mc_port: int = 25565,
         ckpt_dir: str = "./ckpt",
         robonet_base_url: str = "http://localhost:3001/api/v1",
         enable_robonet: bool = False,
@@ -37,6 +44,9 @@ class Voyager:
         self.ckpt_dir = ckpt_dir
         self._robonet_enabled = False
         self._reporter = None
+        self._bot_proc: Optional[subprocess.Popen] = None
+
+        self._start_minecraft_bot(mc_host=mc_host, mc_port=mc_port)
 
         if enable_robonet:
             self._init_robonet(
@@ -44,6 +54,36 @@ class Voyager:
                 sync_skills_on_start=sync_skills_on_start,
                 trusted_robot_ids=trusted_robot_ids,
             )
+
+    def _start_minecraft_bot(self, mc_host: str, mc_port: int) -> None:
+        """Launch bot.js as a subprocess to connect to the Minecraft server."""
+        bot_script = os.path.join(os.path.dirname(__file__), "bot.js")
+        if not os.path.exists(bot_script):
+            logger.warning(f"bot.js not found at {bot_script}, skipping Minecraft connection.")
+            return
+
+        bot_username = os.environ.get("BOT_USERNAME", "voyager_bot")
+        env = os.environ.copy()
+        env["MINECRAFT_HOST"] = mc_host
+        env["MINECRAFT_PORT"] = str(mc_port)
+        env["BOT_USERNAME"] = bot_username
+
+        # Ensure mineflayer can be found (global npm install goes to /usr/lib/node_modules)
+        node_path = env.get("NODE_PATH", "")
+        global_node_modules = "/usr/lib/node_modules"
+        if global_node_modules not in node_path:
+            env["NODE_PATH"] = f"{global_node_modules}:{node_path}".rstrip(":")
+
+        try:
+            self._bot_proc = subprocess.Popen(
+                ["node", bot_script],
+                env=env,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
+            logger.info(f"Minecraft bot started (pid={self._bot_proc.pid}) -> {mc_host}:{mc_port}")
+        except Exception as exc:
+            logger.warning(f"Failed to start Minecraft bot: {exc}")
 
     def _init_robonet(
         self,

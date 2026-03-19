@@ -40,6 +40,7 @@ def main() -> None:
     from voyager import Voyager  # noqa: PLC0415 — imported here to benefit from sys.path[0]
 
     voyager = Voyager(
+        mc_host=minecraft_host,
         ckpt_dir=ckpt_dir,
         robonet_base_url=robonet_base_url,
         enable_robonet=True,
