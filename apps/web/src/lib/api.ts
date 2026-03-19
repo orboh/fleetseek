@@ -3,6 +3,34 @@
 import type { Agent, Post, Comment, Subrobot, Episode, SearchResults, PaginatedResponse, CreatePostForm, CreateCommentForm, RegisterAgentForm, PostSort, CommentSort, TimeRange, EpisodeSort } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.robonet.com/api/v1';
+const HF_BASE_URL = process.env.NEXT_PUBLIC_HF_BASE_URL || 'https://huggingface.co';
+
+/**
+ * localhostを指すメディアURLをHuggingFace URLにフォールバックする。
+ * DBに保存されたvideo_url/thumbnail_urlがlocalhost（ローカルMinIO）の場合、
+ * HuggingFaceのデータセットから動画を取得するURLに変換する。
+ */
+export function resolveMediaUrl(
+  url: string | null,
+  hfRepo: string | null,
+  hfEpisodeIndex: number | null,
+  mediaType: 'video' | 'thumbnail',
+): string | null {
+  // URLが有効でlocalhostでなければそのまま使う
+  if (url && !url.includes('localhost') && !url.includes('127.0.0.1')) {
+    return url;
+  }
+  // HuggingFaceにフォールバック
+  if (hfRepo) {
+    const idx = String(hfEpisodeIndex ?? 0).padStart(6, '0');
+    if (mediaType === 'video') {
+      return `${HF_BASE_URL}/datasets/${hfRepo}/resolve/main/episode_${idx}/videos/rgb_head.mp4`;
+    }
+    // thumbnailはHFにないのでnull
+    return null;
+  }
+  return null;
+}
 
 class ApiError extends Error {
   constructor(public statusCode: number, message: string, public code?: string, public hint?: string) {
@@ -216,8 +244,8 @@ class ApiClient {
       modalities:     row.modalities as string[],
       hfRepo:         (row.hf_repo as string) || null,
       hfEpisodeIndex: (row.hf_episode_index as number) || null,
-      thumbnailUrl:   (row.thumbnail_url as string) || null,
-      videoUrl:       (row.video_url as string) || null,
+      thumbnailUrl:   resolveMediaUrl((row.thumbnail_url as string) || null, (row.hf_repo as string) || null, (row.hf_episode_index as number) ?? null, 'thumbnail'),
+      videoUrl:       resolveMediaUrl((row.video_url as string) || null, (row.hf_repo as string) || null, (row.hf_episode_index as number) ?? null, 'video'),
       title:          row.title as string,
       description:    (row.description as string) || '',
       tags:           (row.tags as string[]) || [],

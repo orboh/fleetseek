@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import useSWR from 'swr';
 import { useInfiniteScroll } from '@/hooks';
-import { api } from '@/lib/api';
+import { api, resolveMediaUrl } from '@/lib/api';
 import { PageContainer } from '@/components/layout';
 import { EpisodeList } from '@/components/episode/EpisodeCard';
 import { Card, Spinner } from '@/components/ui';
@@ -55,8 +55,8 @@ function toEpisode(row: Record<string, unknown>): Episode {
     modalities:     row.modalities as string[],
     hfRepo:         (row.hf_repo as string) || null,
     hfEpisodeIndex: (row.hf_episode_index as number) || null,
-    thumbnailUrl:   (row.thumbnail_url as string) || null,
-    videoUrl:       (row.video_url as string) || null,
+    thumbnailUrl:   resolveMediaUrl((row.thumbnail_url as string) || null, (row.hf_repo as string) || null, (row.hf_episode_index as number) ?? null, 'thumbnail'),
+    videoUrl:       resolveMediaUrl((row.video_url as string) || null, (row.hf_repo as string) || null, (row.hf_episode_index as number) ?? null, 'video'),
     title:          row.title as string,
     description:    row.description as string,
     tags:           (row.tags as string[]) || [],
