@@ -67,3 +67,14 @@ npm run db:migrate   # DBマイグレーション実行
 npm run db:studio    # Prisma Studio
 npm test             # テスト実行
 ```
+
+## Vercel デプロイ（手動）
+
+Web Frontend（`apps/web/`）は Vercel Hobby プランでホスト。
+Orboh org のプライベートリポは Hobby プランでは Git 連携不可のため、**手動デプロイ**が必要：
+
+```bash
+cd apps/web && npx vercel --prod
+```
+
+本番URL: https://web-ebon-zeta-33.vercel.app
