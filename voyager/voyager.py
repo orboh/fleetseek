@@ -1,33 +1,41 @@
 """
 voyager/voyager.py
 
-Voyager class with RoboNet integration hooks.
-
-In production this wraps (or subclasses) the real Voyager implementation.
-The RoboNet-specific logic lives in voyager/robonet/ and is injected here
-as a non-fatal side-effect of learn().
+Voyager wrapper with RoboNet integration.
+Wraps the real MineDojo/Voyager when available, falls back to stub.
 """
 from __future__ import annotations
 
 import logging
 import os
-import subprocess
-import sys
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
 class Voyager:
-    """Voyager lifelong-learning agent with optional RoboNet integration.
+    """
+    RoboNet-integrated wrapper around the real MineDojo Voyager.
 
-    RoboNet-related args (all optional, default off):
-        mc_host: Minecraft server hostname/IP.
-        mc_port: Minecraft server port.
-        robonet_base_url: API base URL.
+    If the real Voyager package is not installed (e.g., in tests),
+    _real_voyager is None and learn() runs in stub mode.
+
+    RoboNet-specific args:
+        robonet_base_url: RoboNet API base URL.
         enable_robonet: Whether to post sessions to RoboNet.
-        sync_skills_on_start: (Phase 5) import trusted robot skills on init.
-        trusted_robot_ids: (Phase 5) whitelist for skill sync.
+        sync_skills_on_start: Import trusted robot skills on init.
+        trusted_robot_ids: Whitelist for skill sync.
+
+    Voyager args (passed through to real Voyager):
+        mc_host: Minecraft server host.
+        mc_port: Minecraft server port.
+        ckpt_dir: Checkpoint directory.
+        openai_api_key: OpenAI (or compatible) API key.
+        action_agent_model_name: Model for action agent.
+        curriculum_agent_model_name: Model for curriculum agent.
+        critic_agent_model_name: Model for critic agent.
+        skill_manager_model_name: Model for skill manager.
+        max_iterations: Max iterations per learn() call.
     """
 
     def __init__(
@@ -39,14 +47,30 @@ class Voyager:
         enable_robonet: bool = False,
         sync_skills_on_start: bool = False,
         trusted_robot_ids: Optional[list[str]] = None,
+        openai_api_key: Optional[str] = None,
+        action_agent_model_name: Optional[str] = None,
+        curriculum_agent_model_name: Optional[str] = None,
+        critic_agent_model_name: Optional[str] = None,
+        skill_manager_model_name: Optional[str] = None,
+        max_iterations: int = 160,
         **kwargs,
     ) -> None:
         self.ckpt_dir = ckpt_dir
         self._robonet_enabled = False
         self._reporter = None
-        self._bot_proc: Optional[subprocess.Popen] = None
+        self._real_voyager = None
 
-        self._start_minecraft_bot(mc_host=mc_host, mc_port=mc_port)
+        self._init_real_voyager(
+            mc_host=mc_host,
+            mc_port=mc_port,
+            ckpt_dir=ckpt_dir,
+            openai_api_key=openai_api_key,
+            action_agent_model_name=action_agent_model_name,
+            curriculum_agent_model_name=curriculum_agent_model_name,
+            critic_agent_model_name=critic_agent_model_name,
+            skill_manager_model_name=skill_manager_model_name,
+            max_iterations=max_iterations,
+        )
 
         if enable_robonet:
             self._init_robonet(
@@ -55,35 +79,79 @@ class Voyager:
                 trusted_robot_ids=trusted_robot_ids,
             )
 
-    def _start_minecraft_bot(self, mc_host: str, mc_port: int) -> None:
-        """Launch bot.js as a subprocess to connect to the Minecraft server."""
-        bot_script = os.path.join(os.path.dirname(__file__), "bot.js")
-        if not os.path.exists(bot_script):
-            logger.warning(f"bot.js not found at {bot_script}, skipping Minecraft connection.")
-            return
+    # ── Real Voyager initialisation ─────────────────────────────────────────
 
-        bot_username = os.environ.get("BOT_USERNAME", "voyager_bot")
-        env = os.environ.copy()
-        env["MINECRAFT_HOST"] = mc_host
-        env["MINECRAFT_PORT"] = str(mc_port)
-        env["BOT_USERNAME"] = bot_username
-
-        # Ensure mineflayer can be found (global npm install goes to /usr/lib/node_modules)
-        node_path = env.get("NODE_PATH", "")
-        global_node_modules = "/usr/lib/node_modules"
-        if global_node_modules not in node_path:
-            env["NODE_PATH"] = f"{global_node_modules}:{node_path}".rstrip(":")
+    def _init_real_voyager(
+        self,
+        mc_host: str,
+        mc_port: int,
+        ckpt_dir: str,
+        openai_api_key: Optional[str],
+        action_agent_model_name: Optional[str],
+        curriculum_agent_model_name: Optional[str],
+        critic_agent_model_name: Optional[str],
+        skill_manager_model_name: Optional[str],
+        max_iterations: int,
+    ) -> None:
+        """Instantiate the real MineDojo Voyager if installed."""
+        # Configure OpenAI-compatible endpoint (Nebius etc.)
+        api_base = os.environ.get("OPENAI_API_BASE")
+        api_key = openai_api_key or os.environ.get("OPENAI_API_KEY") or os.environ.get("NEBIUS_API_KEY")
+        model = (
+            action_agent_model_name
+            or os.environ.get("VOYAGER_MODEL_NAME")
+            or "gpt-4"
+        )
 
         try:
-            self._bot_proc = subprocess.Popen(
-                ["node", bot_script],
-                env=env,
-                stdout=sys.stdout,
-                stderr=sys.stderr,
+            # Patch openai before importing real Voyager
+            import openai
+            if api_base:
+                openai.api_base = api_base
+                logger.info(f"OpenAI API base set to: {api_base}")
+            if api_key:
+                openai.api_key = api_key
+
+            # Import real Voyager (installed in Docker via pip install git+...)
+            # Use sys.path manipulation to avoid importing ourselves (circular import).
+            import sys
+            _self_path = next(
+                (p for p in sys.path if p.endswith("/app/voyager") or p.endswith("/app/voyager/")),
+                None,
             )
-            logger.info(f"Minecraft bot started (pid={self._bot_proc.pid}) -> {mc_host}:{mc_port}")
+            if _self_path:
+                sys.path.remove(_self_path)
+            try:
+                import voyager as _real_voyager_module  # type: ignore[import]
+                RealVoyager = _real_voyager_module.Voyager
+            finally:
+                if _self_path:
+                    sys.path.insert(0, _self_path)
+
+            self._real_voyager = RealVoyager(
+                mc_host=mc_host,
+                mc_port=mc_port,
+                ckpt_dir=ckpt_dir,
+                openai_api_key=api_key or "",
+                action_agent_model_name=model,
+                curriculum_agent_model_name=curriculum_agent_model_name or model,
+                curriculum_agent_qa_model_name=model,
+                critic_agent_model_name=critic_agent_model_name or model,
+                skill_manager_model_name=skill_manager_model_name or model,
+                max_iterations=max_iterations,
+                resume=True,  # pick up from previous checkpoint
+            )
+            logger.info(f"Real Voyager initialised: {mc_host}:{mc_port}, model={model}")
+
+        except ImportError:
+            logger.warning(
+                "MineDojo Voyager not installed — running in stub mode. "
+                "In production, install via: pip install git+https://github.com/MineDojo/Voyager.git"
+            )
         except Exception as exc:
-            logger.warning(f"Failed to start Minecraft bot: {exc}")
+            logger.warning(f"Failed to initialise real Voyager (stub mode): {exc}")
+
+    # ── RoboNet initialisation ──────────────────────────────────────────────
 
     def _init_robonet(
         self,
@@ -106,23 +174,20 @@ class Voyager:
             self._reporter = VoyagerReporter(identity=identity, ckpt_dir=self.ckpt_dir)
             self._robonet_enabled = True
 
-            # Re-send any buffered posts from previous sessions
             try:
                 self._reporter.flush_pending()
             except Exception as exc:
                 logger.warning(f"RoboNet: flush_pending failed (non-fatal): {exc}")
 
-            # Phase 6-B: start heartbeat background thread
             try:
                 self._reporter.start_heartbeat_loop()
             except Exception as exc:
                 logger.warning(f"RoboNet: heartbeat start failed (non-fatal): {exc}")
 
-            # Phase 5: Sync skills from trusted robots on startup
             if sync_skills_on_start and trusted_robot_ids:
                 try:
                     from robonet.skill_sync import sync_skills
-                    skill_manager = getattr(self, "skill_manager", None)
+                    skill_manager = getattr(self._real_voyager, "skill_manager", None)
                     count = sync_skills(
                         identity=identity,
                         skill_manager=skill_manager,
@@ -135,39 +200,73 @@ class Voyager:
         except Exception as exc:
             logger.warning(f"RoboNet: init failed (non-fatal): {exc}")
 
-    def learn(
-        self,
-        completed_tasks: Optional[list[str]] = None,
-        failed_tasks: Optional[list[str]] = None,
-        skills: Optional[dict] = None,
-    ) -> dict:
-        """Run a learning session and post results to RoboNet.
+    # ── Learn loop ──────────────────────────────────────────────────────────
 
-        In the real Voyager implementation, the actual learning loop runs
-        here. This stub captures the contract: RoboNet errors must not
-        affect the return value.
+    def learn(self, reset_env: bool = True) -> dict:
+        """Run a Voyager learning session and post results to RoboNet.
+
+        Delegates to the real MineDojo Voyager when installed.
+        Falls back to stub mode otherwise.
         """
-        completed_tasks = completed_tasks or []
-        failed_tasks = failed_tasks or []
-        skills = skills or {}
+        if self._real_voyager is not None:
+            return self._learn_real(reset_env=reset_env)
+        return self._learn_stub()
 
-        # ── RoboNet post hook ────────────────────────────────────────────
-        # Non-fatal: exceptions are caught so the return value is unaffected.
-        if self._robonet_enabled and self._reporter is not None:
-            try:
-                total_iterations = getattr(
-                    getattr(self, "recorder", None), "iteration", None
-                )
-                self._reporter.post_session(
-                    completed_tasks=completed_tasks,
-                    failed_tasks=failed_tasks,
-                    skills=skills,
-                    total_iterations=total_iterations,
-                )
-            except Exception as exc:
-                logger.warning(f"RoboNet post failed (non-fatal): {exc}")
+    def _learn_real(self, reset_env: bool = True) -> dict:
+        """Delegate to the real MineDojo Voyager's learn() and post to RoboNet."""
+        try:
+            result = self._real_voyager.learn(reset_env=reset_env) or {}
+        except Exception as exc:
+            logger.error(f"Real Voyager learn() failed: {exc}", exc_info=True)
+            result = {}
+
+        completed_tasks: list[str] = result.get("completed_tasks", [])
+        failed_tasks: list[str] = result.get("failed_tasks", [])
+
+        # Extract skills from recorder
+        skills: dict = {}
+        try:
+            recorder = getattr(self._real_voyager, "recorder", None)
+            if recorder is not None:
+                raw_skills = getattr(recorder, "skills", {})
+                if isinstance(raw_skills, dict):
+                    skills = raw_skills
+        except Exception as exc:
+            logger.warning(f"Could not extract skills from recorder: {exc}")
+
+        self._post_to_robonet(completed_tasks=completed_tasks, failed_tasks=failed_tasks, skills=skills)
 
         return {
             "completed_tasks": completed_tasks,
             "failed_tasks": failed_tasks,
         }
+
+    def _learn_stub(self) -> dict:
+        """Stub mode: no real Voyager available."""
+        logger.warning("Running in stub mode — no real Voyager learning.")
+        self._post_to_robonet(completed_tasks=[], failed_tasks=[], skills={})
+        return {"completed_tasks": [], "failed_tasks": []}
+
+    def _post_to_robonet(
+        self,
+        completed_tasks: list[str],
+        failed_tasks: list[str],
+        skills: dict,
+    ) -> None:
+        if not (self._robonet_enabled and self._reporter is not None):
+            return
+        try:
+            total_iterations = None
+            if self._real_voyager is not None:
+                recorder = getattr(self._real_voyager, "recorder", None)
+                if recorder is not None:
+                    total_iterations = getattr(recorder, "iteration", None)
+
+            self._reporter.post_session(
+                completed_tasks=completed_tasks,
+                failed_tasks=failed_tasks,
+                skills=skills,
+                total_iterations=total_iterations,
+            )
+        except Exception as exc:
+            logger.warning(f"RoboNet post failed (non-fatal): {exc}")

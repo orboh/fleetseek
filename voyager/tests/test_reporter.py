@@ -171,25 +171,29 @@ def test_reporter_test_learn_hook_does_not_crash(tmp_path):
 
 def test_learn_returns_correct_result_even_if_hook_raises(tmp_path):
     """learn() 内の投稿フックが例外を出しても learn() の返り値が正しい。"""
-    from robonet.identity import RobotIdentity
     from voyager import Voyager
 
     mock_reporter = MagicMock()
     mock_reporter.post_session.side_effect = RuntimeError("network error")
+
+    # Set up a mock real Voyager that returns tasks
+    mock_real = MagicMock()
+    mock_real.learn.return_value = {
+        "completed_tasks": ["task_a", "task_b"],
+        "failed_tasks": ["task_c"],
+    }
+    mock_real.recorder.skills = SKILLS
 
     voyager = Voyager(
         ckpt_dir=str(tmp_path),
         robonet_base_url=BASE_URL,
         enable_robonet=True,
     )
+    voyager._real_voyager = mock_real
     voyager._reporter = mock_reporter
     voyager._robonet_enabled = True
 
-    result = voyager.learn(
-        completed_tasks=["task_a", "task_b"],
-        failed_tasks=["task_c"],
-        skills=SKILLS,
-    )
+    result = voyager.learn()
 
     assert isinstance(result, dict)
     assert result["completed_tasks"] == ["task_a", "task_b"]
