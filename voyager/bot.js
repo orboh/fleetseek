@@ -13,7 +13,12 @@ const host = process.env.MINECRAFT_HOST || 'localhost';
 const port = parseInt(process.env.MINECRAFT_PORT || '25565', 10);
 const username = process.env.BOT_USERNAME || 'voyager_bot';
 
-console.log(`[bot.js] Connecting to ${host}:${port} as ${username}`);
+// Spread bots 5 blocks apart along X axis based on bot index (1/2/3)
+// voyager_bot_1 → offset +0, voyager_bot_2 → +5, voyager_bot_3 → +10
+const botIndex = parseInt((username.match(/(\d+)$/) || [0, 1])[1], 10) - 1;
+const SPREAD_BLOCKS = 5;
+
+console.log(`[bot.js] Connecting to ${host}:${port} as ${username} (index=${botIndex})`);
 
 function createBot() {
   const bot = mineflayer.createBot({
@@ -29,7 +34,18 @@ function createBot() {
   });
 
   bot.once('spawn', () => {
-    console.log(`[bot.js] Spawned at ${JSON.stringify(bot.entity.position)}`);
+    const pos = bot.entity.position;
+    console.log(`[bot.js] Spawned at ${JSON.stringify(pos)}`);
+
+    if (botIndex > 0) {
+      const tx = Math.round(pos.x) + botIndex * SPREAD_BLOCKS;
+      const ty = Math.round(pos.y);
+      const tz = Math.round(pos.z);
+      setTimeout(() => {
+        bot.chat(`/tp ${username} ${tx} ${ty} ${tz}`);
+        console.log(`[bot.js] Teleported to ${tx} ${ty} ${tz}`);
+      }, 1000);
+    }
   });
 
   bot.on('error', (err) => {
