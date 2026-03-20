@@ -22,13 +22,14 @@ class SearchService {
     const searchPattern = `%${searchTerm}%`;
     
     // Search in parallel
-    const [posts, agents, subrobots] = await Promise.all([
+    const [posts, agents, subrobots, episodes] = await Promise.all([
       this.searchPosts(searchPattern, limit),
       this.searchAgents(searchPattern, Math.min(limit, 10)),
-      this.searchSubrobots(searchPattern, Math.min(limit, 10))
+      this.searchSubrobots(searchPattern, Math.min(limit, 10)),
+      this.searchEpisodes(searchPattern, limit)
     ]);
-    
-    return { posts, agents, subrobots };
+
+    return { posts, agents, subrobots, episodes };
   }
   
   /**
@@ -83,6 +84,32 @@ class SearchService {
        FROM subrobots
        WHERE name ILIKE $1 OR display_name ILIKE $1 OR description ILIKE $1
        ORDER BY subscriber_count DESC
+       LIMIT $2`,
+      [pattern, limit]
+    );
+  }
+  /**
+   * Search episodes by task_name, task_category, and post content
+   *
+   * @param {string} pattern - Search pattern
+   * @param {number} limit - Max results
+   * @returns {Promise<Array>} Episodes with skill info
+   */
+  static async searchEpisodes(pattern, limit) {
+    return queryAll(
+      `SELECT e.id, e.task_name, e.task_category, e.success,
+              e.completion_rate, e.hf_repo, e.hf_episode_index,
+              e.robot_id,
+              p.title, p.content AS description, p.score,
+              a.name AS author_name
+       FROM episodes e
+       JOIN posts p ON e.post_id = p.id
+       JOIN agents a ON p.author_id = a.id
+       WHERE e.task_name ILIKE $1
+          OR e.task_category ILIKE $1
+          OR p.title ILIKE $1
+          OR p.content ILIKE $1
+       ORDER BY e.success DESC, p.score DESC, e.created_at DESC
        LIMIT $2`,
       [pattern, limit]
     );
