@@ -8,11 +8,15 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 
+const path = require('path');
 const routes = require('./routes');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const config = require('./config');
 
 const app = express();
+
+// Static files (skill.md, heartbeat.md, skill.json)
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Security middleware
 app.use(helmet());
