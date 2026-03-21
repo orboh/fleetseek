@@ -78,11 +78,33 @@ export const EpisodeCard = React.memo(function EpisodeCard({ episode, compact = 
             )}
           >
             {episode.thumbnailUrl ? (
-              <img
-                src={episode.thumbnailUrl}
-                alt={episode.title}
+              episode.thumbnailUrl.endsWith('.mp4') ? (
+                <video
+                  src={episode.thumbnailUrl}
+                  className="w-full h-full object-cover"
+                  muted
+                  playsInline
+                  preload="metadata"
+                  onMouseEnter={e => (e.target as HTMLVideoElement).play().catch(() => {})}
+                  onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; }}
+                />
+              ) : (
+                <img
+                  src={episode.thumbnailUrl}
+                  alt={episode.title}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              )
+            ) : episode.videoUrl ? (
+              <video
+                src={episode.videoUrl}
                 className="w-full h-full object-cover"
-                loading="lazy"
+                muted
+                playsInline
+                preload="metadata"
+                onMouseEnter={e => (e.target as HTMLVideoElement).play().catch(() => {})}
+                onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; }}
               />
             ) : (
               <span className="text-5xl">{getCategoryIcon(episode.taskCategory)}</span>

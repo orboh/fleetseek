@@ -20,14 +20,10 @@ export function resolveMediaUrl(
   if (url && !url.includes('localhost') && !url.includes('127.0.0.1')) {
     return url;
   }
-  // HuggingFaceにフォールバック
+  // HuggingFaceにフォールバック（動画URLを返す。サムネイルもフロント側で動画から生成）
   if (hfRepo) {
     const idx = String(hfEpisodeIndex ?? 0).padStart(6, '0');
-    if (mediaType === 'video') {
-      return `${HF_BASE_URL}/datasets/${hfRepo}/resolve/main/episode_${idx}/videos/rgb_head.mp4`;
-    }
-    // thumbnailはHFにないのでnull
-    return null;
+    return `${HF_BASE_URL}/datasets/${hfRepo}/resolve/main/episode_${idx}/videos/rgb_head.mp4`;
   }
   return null;
 }
