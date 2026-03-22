@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import useSWR from 'swr';
-import { useInfiniteScroll } from '@/hooks';
 import { api, resolveMediaUrl } from '@/lib/api';
 import { PageContainer } from '@/components/layout';
 import { EpisodeList } from '@/components/episode/EpisodeCard';
 import { Card, Spinner } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import type { Episode, EpisodeSort } from '@/types';
+
+const PAGE_SIZE = 20;
 
 /** Sort tabs for episodes */
 const SORT_TABS: { value: EpisodeSort; label: string; icon: string }[] = [
@@ -75,17 +76,24 @@ function toEpisode(row: Record<string, unknown>): Episode {
 export default function HomePage() {
   const [sort, setSort] = useState<EpisodeSort>('new');
   const [filter, setFilter] = useState<FilterKey>('all');
+  const [page, setPage] = useState(1);
 
   const filterParams = filterToParams(filter);
 
-  const { data, isLoading, error } = useSWR(
+  // Fetch a large batch, then paginate client-side
+  const { data, isLoading } = useSWR(
     ['episodes', sort, filter],
-    () => api.getEpisodes({ sort, ...filterParams, limit: 40 }),
-    { refreshInterval: 30000 }  // 30s polling
+    () => api.getEpisodes({ sort, ...filterParams, limit: 200 }),
+    { refreshInterval: 30000 }
   );
 
-  const episodes: Episode[] = (data?.data || []).map(toEpisode);
-  const hasMore = data?.pagination?.hasMore ?? false;
+  const allEpisodes: Episode[] = (data?.data || []).map(toEpisode);
+  const totalPages = Math.max(1, Math.ceil(allEpisodes.length / PAGE_SIZE));
+  const episodes = allEpisodes.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset page when sort/filter changes
+  const handleSort = (newSort: EpisodeSort) => { setSort(newSort); setPage(1); };
+  const handleFilter = (newFilter: FilterKey) => { setFilter(newFilter); setPage(1); };
 
   return (
     <PageContainer>
@@ -96,7 +104,7 @@ export default function HomePage() {
             {SORT_TABS.map(tab => (
               <button
                 key={tab.value}
-                onClick={() => setSort(tab.value)}
+                onClick={() => handleSort(tab.value)}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
                   sort === tab.value
@@ -116,7 +124,7 @@ export default function HomePage() {
           {FILTER_CHIPS.map(chip => (
             <button
               key={chip.key}
-              onClick={() => setFilter(chip.key)}
+              onClick={() => handleFilter(chip.key)}
               className={cn(
                 'px-3 py-1 rounded-full text-sm font-medium transition-colors border',
                 filter === chip.key
@@ -130,19 +138,58 @@ export default function HomePage() {
         </div>
 
         {/* Episode list */}
-        <EpisodeList episodes={episodes} isLoading={isLoading && episodes.length === 0} />
+        <EpisodeList episodes={episodes} isLoading={isLoading && allEpisodes.length === 0} />
 
-        {/* Loading more */}
-        {isLoading && episodes.length > 0 && (
-          <div className="flex justify-center py-8">
-            <Spinner />
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 py-4">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className={cn(
+                'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                page === 1
+                  ? 'text-muted-foreground cursor-not-allowed'
+                  : 'bg-muted hover:bg-muted/80 text-foreground'
+              )}
+            >
+              Prev
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+              <button
+                key={p}
+                onClick={() => setPage(p)}
+                className={cn(
+                  'w-8 h-8 rounded-md text-sm font-medium transition-colors',
+                  p === page
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted hover:bg-muted/80 text-foreground'
+                )}
+              >
+                {p}
+              </button>
+            ))}
+
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className={cn(
+                'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                page === totalPages
+                  ? 'text-muted-foreground cursor-not-allowed'
+                  : 'bg-muted hover:bg-muted/80 text-foreground'
+              )}
+            >
+              Next
+            </button>
           </div>
         )}
 
-        {/* End of feed */}
-        {!hasMore && episodes.length > 0 && (
+        {/* Empty state */}
+        {!isLoading && allEpisodes.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">You've reached the end</p>
+            <p className="text-muted-foreground">No episodes found</p>
           </div>
         )}
       </div>
