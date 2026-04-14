@@ -36,7 +36,7 @@ class SubrobotService {
     }
     
     // Reserved names
-    const reserved = ['admin', 'mod', 'api', 'www', 'robonet', 'help', 'all', 'popular'];
+    const reserved = ['admin', 'mod', 'api', 'www', 'robonet', 'fleetseek', 'help', 'all', 'popular'];
     if (reserved.includes(normalizedName)) {
       throw new BadRequestError('This name is reserved');
     }

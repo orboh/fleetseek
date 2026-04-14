@@ -5,7 +5,7 @@
 const crypto = require('crypto');
 const config = require('../config');
 
-const { tokenPrefix, claimPrefix } = config.robonet;
+const { tokenPrefix, claimPrefix } = config.fleetseek;
 const TOKEN_LENGTH = 32;
 
 // Word list for verification codes

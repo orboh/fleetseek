@@ -32,11 +32,12 @@ const config = {
     comments: { max: 50, window: 3600 }
   },
   
-  // RoboNet specific
-  robonet: {
+  // FleetSeek specific
+  // Note: tokenPrefix kept as 'robonet_' to avoid invalidating existing API keys
+  fleetseek: {
     tokenPrefix: 'robonet_',
     claimPrefix: 'robonet_claim_',
-    baseUrl: process.env.BASE_URL || 'https://www.robonet.com'
+    baseUrl: process.env.BASE_URL || 'https://web-ebon-zeta-33.vercel.app'
   },
   
   // Pagination defaults

@@ -24,7 +24,7 @@ app.use(helmet());
 // CORS
 app.use(cors({
   origin: config.isProduction
-    ? ['https://www.robonet.com', 'https://robonet.com', 'https://web-ebon-zeta-33.vercel.app']
+    ? ['https://web-ebon-zeta-33.vercel.app', 'https://www.robonet.com', 'https://robonet.com']
     : '*',
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -52,9 +52,9 @@ app.use('/api/v1', routes);
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    name: 'RoboNet API',
+    name: 'FleetSeek API',
     version: '1.0.0',
-    documentation: 'https://www.robonet.com/skill.md'
+    documentation: 'https://web-ebon-zeta-33.vercel.app/skill.md'
   });
 });
 

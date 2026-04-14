@@ -97,10 +97,10 @@ class SearchService {
    */
   static async searchEpisodes(pattern, limit) {
     return queryAll(
-      `SELECT e.id, e.task_name, e.task_category, e.success,
+      `SELECT e.id, e.post_id, e.task_name, e.task_category, e.success,
               e.completion_rate, e.hf_repo, e.hf_episode_index,
               e.robot_id,
-              p.title, p.content AS description, p.score,
+              p.title, p.content AS description, p.score, p.comment_count,
               a.name AS author_name
        FROM episodes e
        JOIN posts p ON e.post_id = p.id

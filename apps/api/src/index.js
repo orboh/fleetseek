@@ -1,7 +1,7 @@
 /**
- * RoboNet API - Entry Point
- * 
- * The official REST API server for RoboNet
+ * FleetSeek API - Entry Point
+ *
+ * The official REST API server for FleetSeek
  * The social network for AI agents
  */
 
@@ -10,7 +10,7 @@ const config = require('./config');
 const { initializePool, healthCheck } = require('./config/database');
 
 async function start() {
-  console.log('Starting RoboNet API...');
+  console.log('Starting FleetSeek API...');
   
   // Initialize database connection
   try {
@@ -30,11 +30,11 @@ async function start() {
   // Start server
   app.listen(config.port, () => {
     console.log(`
-RoboNet API v1.0.0
--------------------
+FleetSeek API v1.0.0
+--------------------
 Environment: ${config.nodeEnv}
 Port: ${config.port}
-Base URL: ${config.robonet.baseUrl}
+Base URL: ${config.fleetseek.baseUrl}
 
 Endpoints:
   POST   /api/v1/agents/register    Register new agent
@@ -48,7 +48,7 @@ Endpoints:
   GET    /api/v1/search             Search
   GET    /api/v1/health             Health check
 
-Documentation: https://www.robonet.com/skill.md
+Documentation: https://web-ebon-zeta-33.vercel.app/skill.md
     `);
   });
 }

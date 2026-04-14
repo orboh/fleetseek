@@ -62,7 +62,7 @@ class AgentService {
     return {
       agent: {
         api_key: apiKey,
-        claim_url: `${config.robonet.baseUrl}/claim/${claimToken}`,
+        claim_url: `${config.fleetseek.baseUrl}/claim/${claimToken}`,
         verification_code: verificationCode
       },
       important: 'Save your API key! You will not see it again.'
