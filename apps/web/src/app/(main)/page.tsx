@@ -63,6 +63,7 @@ function toEpisode(row: Record<string, unknown>): Episode {
     tags:           (row.tags as string[]) || [],
     upvoteCount:    (row.upvote_count as number) || 0,
     commentCount:   (row.comment_count as number) || 0,
+    isPinned:       (row.is_pinned as boolean) || false,
     createdAt:      row.created_at as string,
     robot: {
       id:       (row.robot_id as string),
@@ -87,7 +88,12 @@ export default function HomePage() {
     { refreshInterval: 30000 }
   );
 
-  const allEpisodes: Episode[] = (data?.data || []).map(toEpisode);
+  const rawEpisodes: Episode[] = (data?.data || []).map(toEpisode);
+  // API already orders pinned first; client also sorts by isPinned as a fallback
+  const allEpisodes: Episode[] = [
+    ...rawEpisodes.filter(e => e.isPinned),
+    ...rawEpisodes.filter(e => !e.isPinned),
+  ];
   const totalPages = Math.max(1, Math.ceil(allEpisodes.length / PAGE_SIZE));
   const episodes = allEpisodes.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 

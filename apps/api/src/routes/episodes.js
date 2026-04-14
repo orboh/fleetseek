@@ -106,4 +106,23 @@ router.post('/:id/upvote', requireAuth, asyncHandler(async (req, res) => {
   success(res, result);
 }));
 
+/**
+ * PATCH /episodes/:id/pin
+ * Pin or unpin an episode (pinned episodes always appear at the top of the feed).
+ * Body: { pinned: true | false }
+ */
+router.patch('/:id/pin', requireAuth, asyncHandler(async (req, res) => {
+  const { pinned } = req.body;
+  if (typeof pinned !== 'boolean') {
+    return res.status(400).json({ error: 'pinned must be a boolean' });
+  }
+  const postId = await EpisodeService.getPostId(req.params.id);
+  const { queryOne } = require('../config/database');
+  await queryOne(
+    'UPDATE posts SET is_pinned = $1, updated_at = NOW() WHERE id = $2 RETURNING id',
+    [pinned, postId]
+  );
+  success(res, { episode_id: req.params.id, pinned });
+}));
+
 module.exports = router;

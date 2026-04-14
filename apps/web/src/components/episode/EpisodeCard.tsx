@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { cn, formatRelativeTime, formatScore } from '@/lib/utils';
 import { useAuth } from '@/hooks';
 import { Card, Skeleton, Badge, Avatar, AvatarFallback } from '@/components/ui';
-import { ArrowBigUp, MessageSquare, Download } from 'lucide-react';
+import { ArrowBigUp, MessageSquare, Download, Pin } from 'lucide-react';
 import type { Episode } from '@/types';
 
 /** Category icon mapping */
@@ -41,7 +41,14 @@ export const EpisodeCard = React.memo(function EpisodeCard({ episode, compact = 
   const hfBaseUrl = process.env.NEXT_PUBLIC_HF_BASE_URL || 'https://huggingface.co';
 
   return (
-    <Card className={cn('group hover:shadow-md transition-shadow', compact ? 'p-3' : 'p-4')}>
+    <Card className={cn('group hover:shadow-md transition-shadow', compact ? 'p-3' : 'p-4', episode.isPinned && 'ring-2 ring-primary/40')}>
+      {/* Pinned banner */}
+      {episode.isPinned && (
+        <div className="flex items-center gap-1 text-xs text-primary font-medium mb-2">
+          <Pin className="h-3 w-3" />
+          <span>Pinned</span>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center gap-2 mb-2">
         {showRobotHeader && (

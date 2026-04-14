@@ -42,7 +42,7 @@ class EpisodeService {
     if (completionRate == null || completionRate < 0 || completionRate > 1) {
       throw new BadRequestError('completion_rate must be between 0 and 1');
     }
-    if (!lerobotPath) throw new BadRequestError('lerobot_path is required');
+    // lerobot_path is optional for native robot data (non-LeRobot format)
     if (!fps || fps <= 0) throw new BadRequestError('fps must be a positive integer');
     if (!modalities || !Array.isArray(modalities) || modalities.length === 0) {
       throw new BadRequestError('modalities must be a non-empty array');
@@ -121,8 +121,8 @@ class EpisodeService {
    */
   static async getFeed({ sort = 'new', taskCategory, success: isSuccess, robotId, limit = 20, cursor }) {
     const orderBy = sort === 'top'
-      ? 'p.score DESC, e.created_at DESC'
-      : 'e.created_at DESC';
+      ? 'p.is_pinned DESC, p.score DESC, e.created_at DESC'
+      : 'p.is_pinned DESC, e.created_at DESC';
 
     let whereClause = 'WHERE 1=1';
     const params = [];
@@ -160,7 +160,7 @@ class EpisodeService {
               e.modalities, e.hf_repo, e.hf_episode_index,
               e.thumbnail_url, e.video_url, e.created_at,
               p.title, p.content AS description, p.score AS upvote_count,
-              p.comment_count, p.subrobot,
+              p.comment_count, p.subrobot, p.is_pinned,
               a.name AS robot_name, a.display_name AS robot_display_name
        FROM episodes e
        JOIN posts p ON e.post_id = p.id

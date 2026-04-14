@@ -217,6 +217,7 @@ export interface Episode {
   tags: string[];
   upvoteCount: number;
   commentCount: number;
+  isPinned: boolean;
   createdAt: string;
   robot: {
     id: string;
