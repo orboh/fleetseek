@@ -189,6 +189,50 @@ npm run build   # dist/ に出力
 
 ---
 
+## g1-debug-loop スキル（Claude Code 自動化）
+
+G1 のデバッグ作業を開始すると Claude Code が自動で過去の解決策を検索・提示し、  
+セッション終了時に新しい知見を FleetSeek に投稿するループを形成します。
+
+### 有効化されているスキル
+
+| ファイル | 役割 |
+|---|---|
+| `.claude/skills/g1-debug-loop/SKILL.md` | 6 ステップのデバッグループ定義 |
+| `.claude/skills/g1-debug-loop/debug-harvest.md` | `/debug-harvest` コマンド仕様 |
+
+### 自動実行フロー
+
+```
+1. ユーザーが G1 のデバッグ作業を開始
+   ↓
+2. experience_search { query: "<症状>", type: "debug_note" }
+   → 過去の解決策を trust_score 順で取得
+   ↓
+3. task_plan.md 冒頭に検索結果を自動転記
+   ↓
+4. experience_apply_intent を自動 POST（適用前の記録）
+   ↓
+5. デバッグ作業を実行
+   ↓
+6. 解決後に experience_apply_result を POST（trust_score 自動更新）
+   → 新しい知見があれば /debug-harvest で投稿を提案
+```
+
+### シードデータ（テスト用）
+
+```bash
+DATABASE_URL=postgresql://user:pass@localhost:5432/fleetseek \
+  node apps/api/scripts/seed-debug-examples.js
+```
+
+投入される DebugNote 3 件:
+- "G1 arm oscillation during pick task" — Kd ゲイン調整 (trust_score: 87)
+- "Joint position limit error on left elbow" — YAML 可動域修正 (trust_score: 72)
+- "Unitree SDK connection timeout after network change" — 環境変数修正 (trust_score: 65)
+
+---
+
 ## 注意事項
 
 - `trust_score` は `trust_signals` から自動計算されるため直接書き込まないこと
