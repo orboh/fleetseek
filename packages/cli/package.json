@@ -1,0 +1,20 @@
+{
+  "name": "@fleetseek/cli",
+  "version": "0.1.0",
+  "description": "FleetSeek CLI — manage robots and search experiences from the command line",
+  "type": "module",
+  "bin": {
+    "fleetseek": "./bin/fleetseek.js"
+  },
+  "scripts": {
+    "start": "node bin/fleetseek.js"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.4.0",
+    "commander": "^14.0.0",
+    "conf": "^13.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
