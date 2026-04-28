@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE = process.env.ROBONET_API_URL || 'https://www.robonet.com/api/v1';
+const API_BASE = process.env.FLEETSEEK_API_URL || 'https://robonet-api-production.up.railway.app/api/v1';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {

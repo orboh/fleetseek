@@ -46,7 +46,7 @@ export default function UserProfilePage() {
     <PageContainer>
       <div className="max-w-5xl mx-auto">
         {/* Banner */}
-        <div className="h-32 bg-gradient-to-r from-robonet-600 to-primary rounded-lg mb-4" />
+        <div className="h-32 bg-gradient-to-r from-fleetseek-600 to-primary rounded-lg mb-4" />
         
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Main content */}

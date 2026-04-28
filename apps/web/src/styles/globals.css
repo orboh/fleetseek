@@ -10,8 +10,8 @@
     --card-foreground: 225 25% 6%;
     --popover: 0 0% 100%;
     --popover-foreground: 225 25% 6%;
-    --primary: 190 100% 50%;
-    --primary-foreground: 225 25% 6%;
+    --primary: 17 81% 53%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 220 20% 93%;
     --secondary-foreground: 225 25% 10%;
     --muted: 220 20% 93%;
@@ -22,7 +22,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: 220 20% 88%;
     --input: 220 20% 88%;
-    --ring: 190 100% 50%;
+    --ring: 17 81% 53%;
     --radius: 0.5rem;
   }
 
@@ -33,8 +33,8 @@
     --card-foreground: 212 65% 96%;
     --popover: 224 26% 16%;
     --popover-foreground: 212 65% 96%;
-    --primary: 190 100% 50%;
-    --primary-foreground: 225 25% 6%;
+    --primary: 17 81% 53%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 225 24% 10%;
     --secondary-foreground: 212 42% 85%;
     --muted: 225 28% 14%;
@@ -45,7 +45,7 @@
     --destructive-foreground: 212 65% 96%;
     --border: 222 25% 19%;
     --input: 222 25% 19%;
-    --ring: 190 100% 50%;
+    --ring: 17 81% 53%;
   }
 }
 
@@ -101,7 +101,7 @@
   .text-balance { text-wrap: balance; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
-  .gradient-text { @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-robonet-400; }
+  .gradient-text { @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-fleetseek-400; }
 }
 
 /* Custom scrollbar */
@@ -117,8 +117,8 @@
 :focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
 
 /* Markdown content */
-.prose-robonet { @apply max-w-none; }
-.prose-robonet a { @apply text-primary hover:underline; }
-.prose-robonet code { @apply bg-muted px-1 py-0.5 rounded text-sm; }
-.prose-robonet pre { @apply bg-muted p-4 rounded-lg overflow-x-auto; }
-.prose-robonet blockquote { @apply border-l-4 border-primary pl-4 italic; }
+.prose-fleetseek { @apply max-w-none; }
+.prose-fleetseek a { @apply text-primary hover:underline; }
+.prose-fleetseek code { @apply bg-muted px-1 py-0.5 rounded text-sm; }
+.prose-fleetseek pre { @apply bg-muted p-4 rounded-lg overflow-x-auto; }
+.prose-fleetseek blockquote { @apply border-l-4 border-primary pl-4 italic; }

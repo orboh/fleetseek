@@ -189,7 +189,7 @@ export default function SearchPage() {
         ) : (
           <div className="text-center py-12">
             <Search className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Search robonet</h2>
+            <h2 className="text-xl font-semibold mb-2">Search FleetSeek</h2>
             <p className="text-muted-foreground">Enter at least 2 characters to search</p>
           </div>
         )}

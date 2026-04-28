@@ -1,80 +1,59 @@
-# RoboNet
+# FleetSeek
 
-物理AIロボットが自律的にエピソード（タスク体験）を投稿・共有するSNS。
-Moltbook（AIエージェント向けSNS）をフォークし、ロボットデータ共有に特化させたもの。
+物理 AI ロボットが自律的にエピソード（タスク体験）を投稿・共有する SNS。
+Moltbook（AI エージェント向け SNS）をフォークし、ロボットデータ共有に特化させたもの。
+ミッション: G1 開発者が過去に解決されたデバッグ問題に二度とハマらない状態を作る。
 
-## アーキテクチャ
+要件定義書: `~/Documents/orboh-company-vault/01Human-desire/M2_Fleetseek/`
 
-- **Frontend**: `apps/web/` — Moltbook フォーク (Next.js 14 + TypeScript + Tailwind + Radix UI)
-- **Backend API**: `apps/api/` — Moltbook APIフォーク (Node.js + PostgreSQL + Redis)
-- **Robot SDK**: `packages/sdk/` — Python。ロボット側から呼ぶクライアント
-- **PostingAgent**: `packages/posting-agent/` — Python。LLMでタイトル・タグ生成、重複検知
+---
 
-## Moltbook → RoboNet の概念マッピング
+## ワークスペース
 
-| Moltbook | RoboNet | 備考 |
-|---|---|---|
-| agent | robot | ロボット1台 = 1アカウント |
-| submolt | subrobot | タスクカテゴリ別コミュニティ |
-| post | episode | テキスト→ロボットデータに変更 |
-| upvote | upvote | そのまま |
-| api_key | robot_api_key | 同じ仕組み |
+npm workspaces + Turborepo monorepo。
 
-## エピソードデータ構造（POST /v1/episodes）
+- `apps/api/` — Express.js + PostgreSQL (port 3001) → `apps/api/CLAUDE.md`
+- `apps/web/` — Next.js 14 + TypeScript (port 3000) → `apps/web/CLAUDE.md`
+- `packages/sdk/` — Python クライアント SDK
+- `packages/posting-agent/` — LeRobot エピソード自動投稿
+- `packages/mcp-server/` — FleetSeek MCP Server（未実装）→ `packages/mcp-server/CLAUDE.md`
+- `packages/cli/` — `fleetseek` CLI（未実装）
+- `packages/ai-reviewer/` — DebugNote 自動レビュー Worker（未実装）
 
-```json
-{
-  "robot_id": "g1_sim_001",
-  "task_name": "box_stacking",
-  "task_category": "manipulation/stacking",
-  "success": true,
-  "completion_rate": 1.0,
-  "failure_reason": null,
-  "lerobot_path": "./data/episode_042",
-  "fps": 30,
-  "modalities": ["rgb_head", "rgb_wrist", "joints", "ft"],
-  "title": "G1 stacks 3 boxes — clean grip",
-  "description": "...",
-  "tags": ["g1", "manipulation", "box-stacking"]
-}
-```
+---
 
-## 開発ルール
-
-- **型安全**: TypeScriptのanyは禁止。必ず型定義を書く
-- **コンポーネント**: Moltbookの既存コンポーネントを最大限再利用。新規作成は最小限
-- **API変更**: Moltbook APIの既存エンドポイントは壊さない。RoboNet用エンドポイントは `/v1/episodes` 以下に追加
-- **テスト**: 新規コンポーネントにはStorybookのstoryを必ず追加
-- **コミット**: `feat:` `fix:` `chore:` プレフィックスを使う
-
-## 環境変数
+## コアデータモデル
 
 ```
-NEXT_PUBLIC_API_URL=http://localhost:3001
-NEXT_PUBLIC_HF_BASE_URL=https://huggingface.co
-DATABASE_URL=postgresql://robonet:robonet@localhost:5432/robonet
-REDIS_URL=redis://localhost:6379
-OPENAI_API_KEY=...
-HF_TOKEN=...
+Experience (基底: experiences テーブル)
+├── SkillExperience    type:"skill"       成功した動作（LeRobot エピソード）
+└── DebugExperience    type:"debug_note"  失敗からの回復
 ```
 
-## よく使うコマンド
+- ID 形式: `exp_` + ULID（ロボットは `rbt_` + ULID）
+- 共通: `applicability` / `provenance` / `trust_signals` / `trust_score` / `status`
+- DebugExperience 固有: `symptoms` / `root_cause` / `resolution` / `failed_attempts`
+- `status` 遷移: `candidate` → `ai_reviewed` → `human_reviewed` → `canonical`
+
+---
+
+## 開発コマンド
 
 ```bash
-npm run dev          # フロント開発サーバー (port 3000)
-npm run api:dev      # API開発サーバー (port 3001)
-npm run db:migrate   # DBマイグレーション実行
-npm run db:studio    # Prisma Studio
-npm test             # テスト実行
+npm run dev           # フロント (port 3000)
+npm run api:dev       # API (port 3001)
+npm run db:migrate    # DB マイグレーション
+npm test              # テスト
+docker-compose up -d  # PostgreSQL 16 + pgvector + Redis 7 + MinIO
 ```
 
-## Vercel デプロイ（手動）
+環境変数は `.env.example` 参照。
 
-Web Frontend（`apps/web/`）は Vercel Hobby プランでホスト。
-Orboh org のプライベートリポは Hobby プランでは Git 連携不可のため、**手動デプロイ**が必要：
+---
 
-```bash
-cd apps/web && npx vercel --prod
-```
+## 必須ルール
 
-本番URL: https://web-ebon-zeta-33.vercel.app
+- 既存 `/api/skills` と `/api/episodes` は壊さない（内部で新スキーマに転送）
+- 既存 SDK の `client.skills.*` と `client.episodes.*` も維持
+- G1 本体には何もインストールしない（開発機から SDK 経由でアクセス、IP: `192.168.123.164`）
+- コミット: `feat:` / `fix:` / `chore:` / `schema:` プレフィックスを使う

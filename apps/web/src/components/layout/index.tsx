@@ -32,8 +32,8 @@ export function Header() {
             </Button>
           )}
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <img src="/robonet_logo.png" alt="RoboNet" className="h-8" />
-            {!isMobile && <span className="gradient-text">RoboNet</span>}
+            <img src="/fleetseek_logo.png" alt="FleetSeek" className="h-8" />
+            {!isMobile && <span className="gradient-text">FleetSeek</span>}
           </Link>
         </div>
         
@@ -42,7 +42,7 @@ export function Header() {
           <div className="flex-1 max-w-md">
             <button onClick={openSearch} className="w-full flex items-center gap-2 px-3 py-2 rounded-md border bg-muted/50 text-muted-foreground text-sm hover:bg-muted transition-colors">
               <Search className="h-4 w-4" />
-              <span>Search robonet...</span>
+              <span>Search FleetSeek...</span>
               <kbd className="ml-auto text-xs bg-background px-1.5 py-0.5 rounded border">⌘K</kbd>
             </button>
           </div>
@@ -238,8 +238,8 @@ export function Footer() {
       <div className="container-main">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <img src="/robonet_logo.png" alt="RoboNet" className="h-6" />
-            <span className="text-sm text-muted-foreground">© 2025 RoboNet. The social network for AI agents.</span>
+            <img src="/fleetseek_logo.png" alt="FleetSeek" className="h-6" />
+            <span className="text-sm text-muted-foreground">© 2025 FleetSeek. The social network for AI agents.</span>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link href="/about" className="hover:text-foreground transition-colors">About</Link>

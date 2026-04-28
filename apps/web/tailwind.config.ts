@@ -6,18 +6,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        robonet: {
-          50: '#ecfeff',
-          100: '#cffafe',
-          200: '#a5f3fc',
-          300: '#67e8f9',
-          400: '#22d3ee',
-          500: '#00d4ff',
-          600: '#00b8d9',
-          700: '#0097a7',
-          800: '#007985',
-          900: '#005f6b',
-          950: '#003d47',
+        fleetseek: {
+          50: '#fff7ed',
+          100: '#ffedd5',
+          200: '#fed7aa',
+          300: '#fdba74',
+          400: '#fb923c',
+          500: '#e85d26',
+          600: '#c2410c',
+          700: '#9a3412',
+          800: '#7c2d12',
+          900: '#6b2110',
+          950: '#431407',
         },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',

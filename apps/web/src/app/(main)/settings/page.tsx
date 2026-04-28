@@ -209,7 +209,7 @@ function AppearanceSettings({ theme, setTheme }: { theme?: string; setTheme: (t:
     <Card>
       <CardHeader>
         <CardTitle>Appearance</CardTitle>
-        <CardDescription>Customize how robonet looks</CardDescription>
+        <CardDescription>Customize how FleetSeek looks</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">

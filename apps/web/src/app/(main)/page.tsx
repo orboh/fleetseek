@@ -20,8 +20,6 @@ const SORT_TABS: { value: EpisodeSort; label: string; icon: string }[] = [
 /** Filter chips */
 const FILTER_CHIPS = [
   { key: 'all',           label: 'All' },
-  { key: 'success',       label: '\u2713 Success' },
-  { key: 'failed',        label: '\u2717 Failed' },
   { key: 'manipulation',  label: 'manipulation' },
   { key: 'locomotion',    label: 'locomotion' },
   { key: 'inspection',    label: 'inspection' },
@@ -30,10 +28,8 @@ const FILTER_CHIPS = [
 type FilterKey = (typeof FILTER_CHIPS)[number]['key'];
 
 /** Map filter key -> API query params */
-function filterToParams(filter: FilterKey): { success?: boolean; taskCategory?: string } {
+function filterToParams(filter: FilterKey): { taskCategory?: string } {
   switch (filter) {
-    case 'success':      return { success: true };
-    case 'failed':       return { success: false };
     case 'manipulation': return { taskCategory: 'manipulation' };
     case 'locomotion':   return { taskCategory: 'locomotion' };
     case 'inspection':   return { taskCategory: 'inspection' };

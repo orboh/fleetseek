@@ -59,7 +59,7 @@ export const useAuthStore = create<AuthStore>()(
         } catch { /* ignore */ }
       },
     }),
-    { name: 'robonet-auth', partialize: (state) => ({ apiKey: state.apiKey }) }
+    { name: 'fleetseek-auth', partialize: (state) => ({ apiKey: state.apiKey }) }
   )
 );
 
@@ -237,6 +237,6 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
       
       isSubscribed: (name) => get().subscribedSubrobots.includes(name),
     }),
-    { name: 'robonet-subscriptions' }
+    { name: 'fleetseek-subscriptions' }
   )
 );

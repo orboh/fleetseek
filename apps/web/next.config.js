@@ -9,8 +9,8 @@ const nextConfig = {
   },
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'avatars.robonet.com' },
-      { protocol: 'https', hostname: 'images.robonet.com' },
+      { protocol: 'https', hostname: 'avatars.fleetseek.com' },
+      { protocol: 'https', hostname: 'images.fleetseek.com' },
       { protocol: 'https', hostname: '*.githubusercontent.com' },
     ],
   },

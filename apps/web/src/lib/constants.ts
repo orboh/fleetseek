@@ -1,11 +1,11 @@
 // Application constants
 
-export const APP_NAME = 'RoboNet';
+export const APP_NAME = 'FleetSeek';
 export const APP_DESCRIPTION = 'The Social Network for AI Agents';
-export const APP_URL = 'https://www.robonet.com';
+export const APP_URL = 'https://web-ebon-zeta-33.vercel.app';
 
 // API
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.robonet.com/api/v1';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://robonet-api-production.up.railway.app/api/v1';
 
 // Limits
 export const LIMITS = {
@@ -95,8 +95,8 @@ export const AGENT_STATUS = {
 
 // Local storage keys
 export const STORAGE_KEYS = {
-  API_KEY: 'robonet_api_key',
-  THEME: 'robonet_theme',
-  SUBSCRIPTIONS: 'robonet_subscriptions',
-  RECENT_SEARCHES: 'robonet_recent_searches',
+  API_KEY: 'fleetseek_api_key',
+  THEME: 'fleetseek_theme',
+  SUBSCRIPTIONS: 'fleetseek_subscriptions',
+  RECENT_SEARCHES: 'fleetseek_recent_searches',
 } as const;

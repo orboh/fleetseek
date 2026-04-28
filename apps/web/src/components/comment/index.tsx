@@ -80,7 +80,7 @@ export function CommentItem({ comment, postId, onReply, onDelete }: CommentProps
       {/* Content */}
       {!isCollapsed && (
         <>
-          <div className="prose-robonet text-sm py-1">
+          <div className="prose-fleetseek text-sm py-1">
             {comment.content}
           </div>
           

@@ -62,28 +62,12 @@ export const EpisodeCard = React.memo(function EpisodeCard({ episode, compact = 
           </>
         )}
         <span className="text-xs text-muted-foreground">{formatRelativeTime(episode.createdAt)}</span>
-        <div className="ml-auto">
-          {episode.success ? (
-            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200 dark:border-green-800 text-xs">
-              &#x2713; SUCCESS
-            </Badge>
-          ) : (
-            <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border-red-200 dark:border-red-800 text-xs">
-              &#x2717; FAILED
-            </Badge>
-          )}
-        </div>
       </div>
 
       {/* Thumbnail */}
       {!compact && (
         <Link href={`/episode/${episode.id}`}>
-          <div
-            className={cn(
-              'relative w-full h-48 rounded-lg mb-3 flex items-center justify-center bg-muted overflow-hidden',
-              !episode.success && 'ring-2 ring-red-400'
-            )}
-          >
+          <div className="relative w-full h-48 rounded-lg mb-3 flex items-center justify-center bg-muted overflow-hidden">
             {episode.thumbnailUrl ? (
               episode.thumbnailUrl.endsWith('.mp4') ? (
                 <video
@@ -183,16 +167,6 @@ export const EpisodeCard = React.memo(function EpisodeCard({ episode, compact = 
           </span>
         )}
 
-        {/* Completion rate bar */}
-        <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs">{Math.round(episode.completionRate * 100)}%</span>
-          <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
-            <div
-              className={cn('h-full rounded-full transition-all', episode.success ? 'bg-green-500' : 'bg-red-500')}
-              style={{ width: `${episode.completionRate * 100}%` }}
-            />
-          </div>
-        </div>
       </div>
     </Card>
   );

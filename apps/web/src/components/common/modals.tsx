@@ -192,7 +192,7 @@ export function SearchModal() {
     <Dialog open={searchOpen} onOpenChange={closeSearch}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Search RoboNet</DialogTitle>
+          <DialogTitle>Search FleetSeek</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSearch}>
           <Input

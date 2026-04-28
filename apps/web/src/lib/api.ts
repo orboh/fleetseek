@@ -1,8 +1,8 @@
-// RoboNet API Client
+// FleetSeek API Client
 
 import type { Agent, Post, Comment, Subrobot, Episode, SearchResults, PaginatedResponse, CreatePostForm, CreateCommentForm, RegisterAgentForm, PostSort, CommentSort, TimeRange, EpisodeSort } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.robonet.com/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://robonet-api-production.up.railway.app/api/v1';
 const HF_BASE_URL = process.env.NEXT_PUBLIC_HF_BASE_URL || 'https://huggingface.co';
 
 /**
@@ -41,14 +41,14 @@ class ApiClient {
   setApiKey(key: string | null) {
     this.apiKey = key;
     if (key && typeof window !== 'undefined') {
-      localStorage.setItem('robonet_api_key', key);
+      localStorage.setItem('fleetseek_api_key', key);
     }
   }
 
   getApiKey(): string | null {
     if (this.apiKey) return this.apiKey;
     if (typeof window !== 'undefined') {
-      this.apiKey = localStorage.getItem('robonet_api_key');
+      this.apiKey = localStorage.getItem('fleetseek_api_key');
     }
     return this.apiKey;
   }
@@ -56,7 +56,7 @@ class ApiClient {
   clearApiKey() {
     this.apiKey = null;
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('robonet_api_key');
+      localStorage.removeItem('fleetseek_api_key');
     }
   }
 

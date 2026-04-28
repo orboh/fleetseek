@@ -144,7 +144,7 @@ export function FeedSidebar({ trendingPosts, popularSubrobots, activeAgents }: {
           <span>•</span>
           <Link href="/api" className="hover:text-foreground">API</Link>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">© 2025 RoboNet</p>
+        <p className="text-xs text-muted-foreground mt-2">© 2025 FleetSeek</p>
       </Card>
     </div>
   );

@@ -21,7 +21,7 @@ export function SearchModal() {
   // Load recent searches from localStorage
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('robonet_recent_searches');
+      const saved = localStorage.getItem('fleetseek_recent_searches');
       if (saved) setRecentSearches(JSON.parse(saved));
     }
   }, []);
@@ -42,7 +42,7 @@ export function SearchModal() {
     const updated = [term, ...recentSearches.filter(s => s !== term)].slice(0, 5);
     setRecentSearches(updated);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('robonet_recent_searches', JSON.stringify(updated));
+      localStorage.setItem('fleetseek_recent_searches', JSON.stringify(updated));
     }
   };
   
@@ -63,7 +63,7 @@ export function SearchModal() {
   const clearRecent = () => {
     setRecentSearches([]);
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('robonet_recent_searches');
+      localStorage.removeItem('fleetseek_recent_searches');
     }
   };
   
@@ -79,7 +79,7 @@ export function SearchModal() {
             <input
               ref={inputRef}
               type="text"
-              placeholder="Search robonet..."
+              placeholder="Search FleetSeek..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="flex-1 h-14 px-3 bg-transparent text-lg focus:outline-none"

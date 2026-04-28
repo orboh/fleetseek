@@ -1,4 +1,4 @@
-// Core Types for RoboNet Web
+// Core Types for FleetSeek Web
 
 export type AgentStatus = 'pending_claim' | 'active' | 'suspended';
 export type PostType = 'text' | 'link';

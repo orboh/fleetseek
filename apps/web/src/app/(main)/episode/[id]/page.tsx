@@ -13,7 +13,7 @@ import {
 } from '@/components/ui';
 import {
   ArrowBigUp, ArrowBigDown, MessageSquare, Share2,
-  Download, ExternalLink, ArrowLeft, Play, CheckCircle2, XCircle,
+  Download, ExternalLink, ArrowLeft, Play,
   Cpu, Cog, Eye, Gauge,
 } from 'lucide-react';
 import { cn, formatScore, formatRelativeTime, formatDateTime } from '@/lib/utils';
@@ -109,10 +109,7 @@ export default function EpisodeDetailPage() {
                 {/* Video / Thumbnail */}
                 <Card className="overflow-hidden">
                   <div
-                    className={cn(
-                      'relative w-full aspect-video flex items-center justify-center bg-muted',
-                      !episode.success && 'ring-2 ring-red-400'
-                    )}
+                    className="relative w-full aspect-video flex items-center justify-center bg-muted"
                   >
                     {episode.videoUrl ? (
                       <video
@@ -133,20 +130,6 @@ export default function EpisodeDetailPage() {
                         <span className="text-sm">No video available</span>
                       </div>
                     )}
-                    {/* Success/Fail overlay badge */}
-                    <div className="absolute top-3 right-3">
-                      {episode.success ? (
-                        <Badge className="bg-green-500/90 text-white border-0 text-sm px-3 py-1">
-                          <CheckCircle2 className="h-4 w-4 mr-1" />
-                          SUCCESS
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-red-500/90 text-white border-0 text-sm px-3 py-1">
-                          <XCircle className="h-4 w-4 mr-1" />
-                          FAILED
-                        </Badge>
-                      )}
-                    </div>
                   </div>
                 </Card>
 
@@ -235,20 +218,7 @@ export default function EpisodeDetailPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
                     <MetaItem label="Task" value={episode.taskName} />
                     <MetaItem label="Category" value={episode.taskCategory} icon={getCategoryIcon(episode.taskCategory)} />
-                    <MetaItem label="Completion" value={`${Math.round(episode.completionRate * 100)}%`}>
-                      <div className="w-full h-1.5 rounded-full bg-muted mt-1 overflow-hidden">
-                        <div
-                          className={cn('h-full rounded-full', episode.success ? 'bg-green-500' : 'bg-red-500')}
-                          style={{ width: `${episode.completionRate * 100}%` }}
-                        />
-                      </div>
-                    </MetaItem>
                     <MetaItem label="FPS" value={`${episode.fps} fps`} />
-                    <MetaItem label="Result" value={episode.success ? 'Success' : 'Failed'}>
-                      {!episode.success && episode.failureReason && (
-                        <p className="text-xs text-red-500 mt-0.5">{episode.failureReason}</p>
-                      )}
-                    </MetaItem>
                     {episode.hfEpisodeIndex != null && (
                       <MetaItem label="HF Index" value={`#${episode.hfEpisodeIndex}`} />
                     )}
@@ -378,11 +348,7 @@ export default function EpisodeDetailPage() {
                         <p className="text-lg font-bold">{episode.commentCount}</p>
                         <p className="text-xs text-muted-foreground">Comments</p>
                       </div>
-                      <div className="p-2 rounded-lg bg-muted">
-                        <p className="text-lg font-bold">{Math.round(episode.completionRate * 100)}%</p>
-                        <p className="text-xs text-muted-foreground">Completion</p>
-                      </div>
-                      <div className="p-2 rounded-lg bg-muted">
+                      <div className="p-2 rounded-lg bg-muted col-span-2">
                         <p className="text-lg font-bold">{episode.fps}</p>
                         <p className="text-xs text-muted-foreground">FPS</p>
                       </div>
