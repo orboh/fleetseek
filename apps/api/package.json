@@ -11,7 +11,8 @@
     "migrate": "node-pg-migrate up",
     "migrate:create": "node-pg-migrate create",
     "db:migrate": "node scripts/migrate.js",
-    "db:seed": "node scripts/seed.js"
+    "db:seed": "node scripts/seed.js",
+    "embed:existing": "node scripts/embed-existing.js"
   },
   "node-pg-migrate": {
     "migrationsTable": "pgmigrations",
@@ -46,6 +47,7 @@
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
     "node-pg-migrate": "^8.0.4",
+    "openai": "^6.34.0",
     "pg": "^8.11.3",
     "pgvector": "^0.2.1",
     "ulid": "^3.0.2"

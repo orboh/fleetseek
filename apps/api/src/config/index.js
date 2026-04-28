@@ -32,6 +32,11 @@ const config = {
     comments: { max: 50, window: 3600 }
   },
   
+  // OpenAI (embedding generation)
+  openai: {
+    apiKey: process.env.OPENAI_API_KEY || null
+  },
+
   // FleetSeek specific
   // Note: tokenPrefix kept as 'robonet_' to avoid invalidating existing API keys
   fleetseek: {

@@ -4,7 +4,7 @@
 Orboh 社内で Claude Code が DebugNote を自動検索・自動投稿するループを回せる状態にする (MVP-α)。
 
 ## Current Phase
-MVP-α 完了 (全 Phase 1–8 done)
+MVP-β 完了 (Phase 9 + 10 done)
 
 ## Phases
 
@@ -75,6 +75,19 @@ MVP-α 完了 (全 Phase 1–8 done)
 - [x] ローカルでの E2E 動作確認
 - [x] API ドキュメント更新 (skill.md / README.md / CLAUDE.md)
 - [x] MCP サーバーのローカル動作確認
+- **Status:** complete
+
+### Phase 9: Embedding 生成 + 意味検索 (MVP-β)
+- [x] `apps/api/src/utils/embedding.js` — OpenAI text-embedding-3-small ユーティリティ
+- [x] `POST /experiences` に非同期 embedding 生成を追加
+- [x] `POST /experiences/search` に vector similarity search を追加（ILIKE との hybrid fallback）
+- [x] `apps/api/scripts/embed-existing.js` — 既存22件の batch embedding スクリプト
+- [x] `.env.example` に `OPENAI_API_KEY` を追加
+- **Status:** complete (OPENAI_API_KEY 設定後に `npm run embed:existing` で既存データを埋める)
+
+### Phase 10: trust_score 改善 (MVP-β)
+- [x] ベイズ平均に変更（prior: 3件×50%）→ 1回成功で62.5点（従来は100点）
+- [x] `POST /experiences/:id/applications` のスコア計算を更新
 - **Status:** complete
 
 ## Key Questions

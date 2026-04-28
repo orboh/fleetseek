@@ -13,15 +13,24 @@ const { success, created } = require('../utils/response');
 const { queryOne, queryAll, transaction } = require('../config/database');
 const { NotFoundError, BadRequestError } = require('../utils/errors');
 const { generateExperienceId } = require('../utils/id');
+const { embedExperience, generateEmbedding, isEmbeddingAvailable } = require('../utils/embedding');
 
 const router = Router();
 
 const VALID_OUTCOMES = ['success', 'failure', 'partial', 'skipped'];
 
+// Bayesian average prior: assume 3 applications at 50% success before we have real data.
+// This prevents a single success from immediately giving trust_score=100.
+const PRIOR_N = 3;
+const PRIOR_SCORE = 50;
+
+function bayesianTrustScore(successful, total) {
+  return ((successful + PRIOR_N * (PRIOR_SCORE / 100)) / (total + PRIOR_N)) * 100;
+}
+
 /**
  * POST /experiences
  * Create a new Experience (skill or debug_note).
- * Requires API key authentication.
  */
 router.post('/', requireAuth, asyncHandler(async (req, res) => {
   const {
@@ -49,7 +58,6 @@ router.post('/', requireAuth, asyncHandler(async (req, res) => {
 
   const id = generateExperienceId();
 
-  // Initial trust_signals scaffold
   const initialTrustSignals = {
     applications: { total: 0, successful: 0, failed: 0 },
     upvotes: 0,
@@ -82,13 +90,23 @@ router.post('/', requireAuth, asyncHandler(async (req, res) => {
     ]
   );
 
+  // Generate embedding asynchronously (don't block the response)
+  if (isEmbeddingAvailable()) {
+    embedExperience({ title, description, data }).then(vector => {
+      if (vector) {
+        queryOne(
+          `UPDATE experiences SET embedding = $1 WHERE id = $2`,
+          [`[${vector.join(',')}]`, id]
+        ).catch(err => console.error('[embedding] update failed:', err.message));
+      }
+    });
+  }
+
   created(res, { experience });
 }));
 
 /**
  * GET /experiences/:id
- * Retrieve a single Experience by ID.
- * No authentication required.
  */
 router.get('/:id', asyncHandler(async (req, res) => {
   const experience = await queryOne(
@@ -105,24 +123,78 @@ router.get('/:id', asyncHandler(async (req, res) => {
 
 /**
  * POST /experiences/search
- * Search experiences with optional text query, type filter, and tag filter.
- * Ordered by trust_score DESC.
- * Body: { query?, type?, tags?, limit? }
+ * Hybrid search: vector similarity (if embedding available) + ILIKE text filter.
+ * Body: { query?, type?, tags?, limit?, semantic? }
+ *
+ * When OPENAI_API_KEY is set and `query` is provided:
+ *   - Generates a query embedding
+ *   - Returns results ordered by cosine similarity (vector <=> query_vector)
+ *   - Falls back to ILIKE if embedding generation fails
+ *
+ * When OPENAI_API_KEY is not set (or semantic=false):
+ *   - Pure ILIKE keyword search ordered by trust_score DESC
  */
 router.post('/search', asyncHandler(async (req, res) => {
-  // Note: /search must be declared before /:id so it is not caught by the param route.
-  const { query: textQuery, type, tags, limit = 20 } = req.body;
+  // Note: /search must be declared before /:id
+  const { query: textQuery, type, tags, limit = 20, semantic = true } = req.body;
 
   const safeLimit = Math.min(parseInt(limit, 10) || 20, 100);
 
+  // Try semantic (vector) search first
+  if (textQuery && semantic && isEmbeddingAvailable()) {
+    const queryVector = await generateEmbedding(textQuery);
+    if (queryVector) {
+      const conditions = [];
+      const params = [`[${queryVector.join(',')}]`];
+      let paramIndex = 2;
+
+      // Require embedding to be non-null for vector search
+      conditions.push('embedding IS NOT NULL');
+
+      if (type) {
+        if (!['skill', 'debug_note'].includes(type)) {
+          throw new BadRequestError('type must be "skill" or "debug_note"');
+        }
+        conditions.push(`type = $${paramIndex}`);
+        params.push(type);
+        paramIndex++;
+      }
+
+      if (tags && Array.isArray(tags) && tags.length > 0) {
+        conditions.push(`tags::jsonb ?| $${paramIndex}::text[]`);
+        params.push(tags);
+        paramIndex++;
+      }
+
+      params.push(safeLimit);
+      const whereClause = `WHERE ${conditions.join(' AND ')}`;
+
+      const experiences = await queryAll(
+        `SELECT *, (embedding <=> $1) AS _distance
+         FROM experiences
+         ${whereClause}
+         ORDER BY _distance ASC
+         LIMIT $${paramIndex}`,
+        params
+      );
+
+      // Strip internal _distance field from response
+      const cleaned = experiences.map(({ _distance, ...e }) => e);
+
+      // If vector search returned results, use them; otherwise fall through to ILIKE
+      if (cleaned.length > 0) {
+        return success(res, { experiences: cleaned, count: cleaned.length, mode: 'semantic' });
+      }
+    }
+  }
+
+  // Fallback: ILIKE keyword search ordered by trust_score DESC
   const conditions = [];
   const params = [];
   let paramIndex = 1;
 
   if (textQuery) {
-    conditions.push(
-      `(title ILIKE $${paramIndex} OR description ILIKE $${paramIndex})`
-    );
+    conditions.push(`(title ILIKE $${paramIndex} OR description ILIKE $${paramIndex})`);
     params.push(`%${textQuery}%`);
     paramIndex++;
   }
@@ -137,15 +209,12 @@ router.post('/search', asyncHandler(async (req, res) => {
   }
 
   if (tags && Array.isArray(tags) && tags.length > 0) {
-    // tags column is stored as JSONB; match any tag using the ? operator
     conditions.push(`tags::jsonb ?| $${paramIndex}::text[]`);
     params.push(tags);
     paramIndex++;
   }
 
-  const whereClause =
-    conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   params.push(safeLimit);
 
   const experiences = await queryAll(
@@ -156,14 +225,11 @@ router.post('/search', asyncHandler(async (req, res) => {
     params
   );
 
-  success(res, { experiences, count: experiences.length });
+  success(res, { experiences, count: experiences.length, mode: 'keyword' });
 }));
 
 /**
  * POST /experiences/:id/intent_to_apply
- * Record a robot's intent to apply this experience before actually running it.
- * Requires API key authentication.
- * Body: (none required; robot identified via auth token)
  */
 router.post('/:id/intent_to_apply', requireAuth, asyncHandler(async (req, res) => {
   const experienceId = req.params.id;
@@ -190,10 +256,7 @@ router.post('/:id/intent_to_apply', requireAuth, asyncHandler(async (req, res) =
 
 /**
  * POST /experiences/:id/applications
- * Report the outcome of applying an experience.
- * Requires API key authentication.
- * Body: { outcome, outcome_notes?, session_id? }
- * outcome must be one of: 'success', 'failure', 'partial', 'skipped'
+ * Report outcome and update trust_score using Bayesian average.
  */
 router.post('/:id/applications', requireAuth, asyncHandler(async (req, res) => {
   const experienceId = req.params.id;
@@ -216,7 +279,6 @@ router.post('/:id/applications', requireAuth, asyncHandler(async (req, res) => {
   }
 
   const result = await transaction(async (client) => {
-    // Insert application record
     const application = (
       await client.query(
         `INSERT INTO experience_applications (
@@ -228,7 +290,6 @@ router.post('/:id/applications', requireAuth, asyncHandler(async (req, res) => {
       )
     ).rows[0];
 
-    // Update trust_signals counters
     const signals = experience.trust_signals || {
       applications: { total: 0, successful: 0, failed: 0 }
     };
@@ -243,9 +304,10 @@ router.post('/:id/applications', requireAuth, asyncHandler(async (req, res) => {
       signals.applications.failed += 1;
     }
 
-    const total = signals.applications.total;
-    const successful = signals.applications.successful;
-    const newTrustScore = total > 0 ? (successful / total) * 100 : 0;
+    const newTrustScore = bayesianTrustScore(
+      signals.applications.successful,
+      signals.applications.total
+    );
 
     await client.query(
       `UPDATE experiences
