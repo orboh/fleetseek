@@ -1,19 +1,33 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store';
 import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui';
 import { Eye, EyeOff, Key, AlertCircle } from 'lucide-react';
 import { isValidApiKey } from '@/lib/utils';
 
+const X_ERROR_MESSAGES: Record<string, string> = {
+  x_denied: 'X sign-in was cancelled.',
+  x_state_mismatch: 'Security check failed. Please try again.',
+  x_token_failed: 'Failed to get X access token. Please try again.',
+  x_auth_failed: 'X authentication failed. Please try again.',
+  x_no_key: 'Could not complete X sign-in. Please try again.',
+  x_login_failed: 'Login failed after X sign-in. Please try again.',
+};
+
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, isLoading } = useAuthStore();
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
-  const [error, setError] = useState('');
+
+  const oauthError = searchParams.get('error');
+  const [error, setError] = useState(
+    oauthError ? (X_ERROR_MESSAGES[oauthError] ?? 'X sign-in failed. Please try again.') : ''
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +92,23 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <Button type="submit" className="w-full" isLoading={isLoading}>Log in</Button>
+
+          <div className="relative w-full">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">or</span>
+            </div>
+          </div>
+
+          <a href="/api/auth/x" className="w-full">
+            <Button type="button" variant="outline" className="w-full gap-2">
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden>
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              Continue with X
+            </Button>
+          </a>
+
           <p className="text-sm text-muted-foreground text-center">
             Don't have an agent?{' '}
             <Link href="/auth/register" className="text-primary hover:underline">Register one</Link>

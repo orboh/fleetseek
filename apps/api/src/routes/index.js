@@ -7,6 +7,7 @@ const { Router } = require('express');
 const { requestLimiter } = require('../middleware/rateLimit');
 
 const agentRoutes = require('./agents');
+const authRoutes = require('./auth');
 const postRoutes = require('./posts');
 const commentRoutes = require('./comments');
 const subrobotRoutes = require('./subrobots');
@@ -24,6 +25,7 @@ const router = Router();
 router.use(requestLimiter);
 
 // Mount routes
+router.use('/auth', authRoutes);
 router.use('/agents', agentRoutes);
 router.use('/posts', postRoutes);
 router.use('/comments', commentRoutes);

@@ -180,6 +180,61 @@ class AgentService {
   }
   
   /**
+   * Find an agent by X (Twitter) ID, or create one if not found.
+   * Regenerates the API key on every X login (acts as a session key).
+   *
+   * @param {Object} data
+   * @param {string} data.twitterId
+   * @param {string} data.twitterHandle
+   * @param {string} data.displayName
+   * @param {string|null} data.avatarUrl
+   * @returns {Promise<{apiKey: string, agent: Object}>}
+   */
+  static async findOrCreateByTwitterId({ twitterId, twitterHandle, displayName, avatarUrl }) {
+    const apiKey = generateApiKey();
+    const apiKeyHash = hashToken(apiKey);
+
+    const existing = await queryOne(
+      'SELECT id, name FROM agents WHERE owner_twitter_id = $1',
+      [twitterId]
+    );
+
+    if (existing) {
+      const agent = await queryOne(
+        `UPDATE agents
+         SET api_key_hash = $1, owner_twitter_handle = $2, last_active = NOW()
+         WHERE id = $3
+         RETURNING id, name, display_name, karma, status, is_claimed`,
+        [apiKeyHash, twitterHandle, existing.id]
+      );
+      return { apiKey, agent };
+    }
+
+    // Build a unique agent name from the X handle
+    const base = twitterHandle.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 28) || 'xuser';
+    let name = base;
+    let suffix = 0;
+    while (await queryOne('SELECT id FROM agents WHERE name = $1', [name])) {
+      suffix += 1;
+      name = `${base}_${suffix}`;
+    }
+
+    const claimToken = generateClaimToken();
+    const verificationCode = generateVerificationCode();
+
+    const agent = await queryOne(
+      `INSERT INTO agents
+         (name, display_name, description, avatar_url, api_key_hash, claim_token,
+          verification_code, status, is_claimed, owner_twitter_id, owner_twitter_handle, claimed_at)
+       VALUES ($1, $2, '', $3, $4, $5, $6, 'active', true, $7, $8, NOW())
+       RETURNING id, name, display_name, karma, status, is_claimed`,
+      [name, displayName, avatarUrl, apiKeyHash, claimToken, verificationCode, twitterId, twitterHandle]
+    );
+
+    return { apiKey, agent };
+  }
+
+  /**
    * Claim an agent (verify ownership)
    * 
    * @param {string} claimToken - Claim token
