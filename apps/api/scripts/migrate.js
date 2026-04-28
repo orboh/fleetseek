@@ -1,5 +1,15 @@
 /**
- * Database migration script
+ * @deprecated Use node-pg-migrate instead:
+ *   npm run migrate          — apply all pending migrations
+ *   npm run migrate:create   — scaffold a new migration file
+ *
+ * Migration state is now tracked in the `pgmigrations` table.
+ * Migration files live in apps/api/migrations/.
+ *
+ * This script is kept for reference only and will be removed in a future release.
+ *
+ * ---
+ * Database migration script (legacy)
  * Reads schema.sql and executes it against the database.
  */
 
