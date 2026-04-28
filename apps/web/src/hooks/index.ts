@@ -3,7 +3,7 @@ import useSWR, { SWRConfiguration } from 'swr';
 import { useInView } from 'react-intersection-observer';
 import { api, ApiError } from '@/lib/api';
 import { useAuthStore, useFeedStore, useUIStore } from '@/store';
-import type { Post, Comment, Agent, Subrobot, Episode, PostSort, CommentSort, EpisodeSort } from '@/types';
+import type { Post, Comment, Agent, Subrobot, Episode, Experience, PostSort, CommentSort, EpisodeSort } from '@/types';
 import { debounce, isValidAgentName } from '@/lib/utils';
 export { isValidAgentName };
 
@@ -107,6 +107,20 @@ export function useSubrobot(name: string, config?: SWRConfiguration) {
 
 export function useSubrobots(config?: SWRConfiguration) {
   return useSWR<{ data: Subrobot[] }>(['subrobots'], () => api.getSubrobots(), config);
+}
+
+// Experience hooks
+export function useExperience(id: string, config?: SWRConfiguration) {
+  return useSWR<Experience>(id ? ['experience', id] : null, () => api.getExperience(id), config);
+}
+
+export function useExperiences(options: { query?: string; type?: 'skill' | 'debug_note'; limit?: number; enabled?: boolean } = {}, config?: SWRConfiguration) {
+  const enabled = options.enabled !== false;
+  const key = useMemo(
+    () => enabled ? ['experiences', options.query || '', options.type || 'all', options.limit || 20] : null,
+    [enabled, options.query, options.type, options.limit]
+  );
+  return useSWR(key, () => api.searchExperiences(options), config);
 }
 
 // Search hook

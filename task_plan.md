@@ -4,7 +4,7 @@
 Orboh 社内で Claude Code が DebugNote を自動検索・自動投稿するループを回せる状態にする (MVP-α)。
 
 ## Current Phase
-MVP-β 完了 (Phase 9 + 10 done)
+MVP-γ 完了 (Phase 11 done)
 
 ## Phases
 
@@ -88,6 +88,16 @@ MVP-β 完了 (Phase 9 + 10 done)
 ### Phase 10: trust_score 改善 (MVP-β)
 - [x] ベイズ平均に変更（prior: 3件×50%）→ 1回成功で62.5点（従来は100点）
 - [x] `POST /experiences/:id/applications` のスコア計算を更新
+- **Status:** complete
+
+### Phase 11: Web フロントエンド Experience 表示 (MVP-γ)
+- [x] `types/index.ts` に Experience / DebugData 型追加
+- [x] `lib/api.ts` に `getExperience` / `searchExperiences` + `toExperience` 変換関数追加
+- [x] `hooks/index.ts` に `useExperience` / `useExperiences(enabled フラグ付き)` 追加
+- [x] `components/experience/ExperienceCard.tsx` 新規作成 (カード + リスト + スケルトン)
+- [x] `app/(main)/experience/[id]/page.tsx` 詳細ページ新規作成
+- [x] `app/(main)/page.tsx` に「Skill Episodes」/「DebugNotes」タブ追加
+- [x] trust_signals.applications 防御的パース修正 (マイグレーション済み旧データ対応)
 - **Status:** complete
 
 ## Key Questions

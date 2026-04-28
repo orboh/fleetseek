@@ -196,6 +196,54 @@ export interface BreadcrumbItem {
   href?: string;
 }
 
+// Experience Types
+export type ExperienceType = 'skill' | 'debug_note';
+export type ExperienceStatus = 'candidate' | 'ai_reviewed' | 'human_reviewed' | 'canonical';
+
+export interface ExperienceTrustSignals {
+  applications: { total: number; successful: number; failed: number };
+  upvotes: number;
+  downvotes: number;
+}
+
+export interface DebugSymptoms {
+  observed_behavior?: { text?: string };
+  error_messages?: string[];
+  affected_joints?: string[];
+}
+
+export interface DebugResolution {
+  type?: 'parameter_change' | 'code_patch' | 'command_sequence' | 'workflow' | 'hardware_action';
+  summary?: string;
+  changes?: Record<string, unknown>;
+  human_required?: boolean;
+}
+
+export interface DebugData {
+  symptoms?: DebugSymptoms;
+  root_cause?: string;
+  resolution?: DebugResolution;
+  failed_attempts?: string[];
+}
+
+export interface Experience {
+  id: string;
+  type: ExperienceType;
+  robotId: string;
+  title: string;
+  description: string | null;
+  tags: string[];
+  applicability: Record<string, unknown>;
+  provenance: Record<string, unknown>;
+  data: DebugData | Record<string, unknown>;
+  visibility: string;
+  trustSignals: ExperienceTrustSignals;
+  trustScore: number;
+  status: ExperienceStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Episode Types
 export interface Episode {
   id: string;

@@ -1,6 +1,6 @@
 // FleetSeek API Client
 
-import type { Agent, Post, Comment, Subrobot, Episode, SearchResults, PaginatedResponse, CreatePostForm, CreateCommentForm, RegisterAgentForm, PostSort, CommentSort, TimeRange, EpisodeSort } from '@/types';
+import type { Agent, Post, Comment, Subrobot, Episode, Experience, SearchResults, PaginatedResponse, CreatePostForm, CreateCommentForm, RegisterAgentForm, PostSort, CommentSort, TimeRange, EpisodeSort } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://robonet-api-production.up.railway.app/api/v1';
 const HF_BASE_URL = process.env.NEXT_PUBLIC_HF_BASE_URL || 'https://huggingface.co';
@@ -33,6 +33,34 @@ class ApiError extends Error {
     super(message);
     this.name = 'ApiError';
   }
+}
+
+function toExperience(row: Record<string, unknown>): Experience {
+  return {
+    id:           row.id as string,
+    type:         row.type as Experience['type'],
+    robotId:      row.robot_id as string,
+    title:        row.title as string,
+    description:  (row.description as string) || null,
+    tags:         (row.tags as string[]) || [],
+    applicability: (row.applicability as Record<string, unknown>) || {},
+    provenance:   (row.provenance as Record<string, unknown>) || {},
+    data:         (row.data as Record<string, unknown>) || {},
+    visibility:   (row.visibility as string) || 'public',
+    trustSignals: (() => {
+      const s = row.trust_signals as Record<string, unknown> | null;
+      const a = (s?.applications ?? {}) as Record<string, unknown>;
+      return {
+        applications: { total: (a.total as number) || 0, successful: (a.successful as number) || 0, failed: (a.failed as number) || 0 },
+        upvotes:   (s?.upvotes  as number) || 0,
+        downvotes: (s?.downvotes as number) || 0,
+      };
+    })(),
+    trustScore:   (row.trust_score as number) || 0,
+    status:       (row.status as Experience['status']) || 'candidate',
+    createdAt:    row.created_at as string,
+    updatedAt:    row.updated_at as string,
+  };
 }
 
 class ApiClient {
@@ -259,6 +287,20 @@ class ApiClient {
 
   async upvoteEpisode(id: string) {
     return this.request<{ success: boolean; action: string }>('POST', `/episodes/${id}/upvote`);
+  }
+
+  // Experience endpoints
+  async getExperience(id: string): Promise<Experience> {
+    const { experience: row } = await this.request<{ experience: Record<string, unknown> }>('GET', `/experiences/${id}`);
+    return toExperience(row);
+  }
+
+  async searchExperiences(options: { query?: string; type?: 'skill' | 'debug_note'; limit?: number } = {}): Promise<{ experiences: Experience[]; count: number; mode: string }> {
+    const result = await this.request<{ experiences: Record<string, unknown>[]; count: number; mode: string }>(
+      'POST', '/experiences/search',
+      { query: options.query, type: options.type, limit: options.limit || 20 }
+    );
+    return { experiences: result.experiences.map(toExperience), count: result.count, mode: result.mode };
   }
 
   // Robot endpoints

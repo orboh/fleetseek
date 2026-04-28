@@ -3,18 +3,27 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { api, resolveMediaUrl } from '@/lib/api';
+import { useExperiences } from '@/hooks';
 import { PageContainer } from '@/components/layout';
 import { EpisodeList } from '@/components/episode/EpisodeCard';
+import { ExperienceList } from '@/components/experience/ExperienceCard';
 import { Card, Spinner } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import type { Episode, EpisodeSort } from '@/types';
 
 const PAGE_SIZE = 20;
 
+type MainTab = 'episodes' | 'debug_notes';
+
+const MAIN_TABS: { value: MainTab; label: string; icon: string }[] = [
+  { value: 'episodes',    label: 'Skill Episodes', icon: '🤖' },
+  { value: 'debug_notes', label: 'DebugNotes',     icon: '🔧' },
+];
+
 /** Sort tabs for episodes */
 const SORT_TABS: { value: EpisodeSort; label: string; icon: string }[] = [
-  { value: 'new', label: 'New', icon: '\u2728' },
-  { value: 'top', label: 'Top', icon: '\u{1F4C8}' },
+  { value: 'new', label: 'New', icon: '✨' },
+  { value: 'top', label: 'Top', icon: '📈' },
 ];
 
 /** Filter chips */
@@ -27,7 +36,6 @@ const FILTER_CHIPS = [
 
 type FilterKey = (typeof FILTER_CHIPS)[number]['key'];
 
-/** Map filter key -> API query params */
 function filterToParams(filter: FilterKey): { taskCategory?: string } {
   switch (filter) {
     case 'manipulation': return { taskCategory: 'manipulation' };
@@ -37,7 +45,6 @@ function filterToParams(filter: FilterKey): { taskCategory?: string } {
   }
 }
 
-/** Transform API response row to Episode type */
 function toEpisode(row: Record<string, unknown>): Episode {
   return {
     id:             row.id as string,
@@ -71,21 +78,27 @@ function toEpisode(row: Record<string, unknown>): Episode {
 }
 
 export default function HomePage() {
+  const [mainTab, setMainTab] = useState<MainTab>('episodes');
   const [sort, setSort] = useState<EpisodeSort>('new');
   const [filter, setFilter] = useState<FilterKey>('all');
   const [page, setPage] = useState(1);
 
   const filterParams = filterToParams(filter);
 
-  // Fetch a large batch, then paginate client-side
-  const { data, isLoading } = useSWR(
-    ['episodes', sort, filter],
+  // Episodes data
+  const { data: episodeData, isLoading: episodesLoading } = useSWR(
+    mainTab === 'episodes' ? ['episodes', sort, filter] : null,
     () => api.getEpisodes({ sort, ...filterParams, limit: 200 }),
     { refreshInterval: 30000 }
   );
 
-  const rawEpisodes: Episode[] = (data?.data || []).map(toEpisode);
-  // API already orders pinned first; client also sorts by isPinned as a fallback
+  // DebugNotes data — only fetch when on that tab
+  const { data: debugData, isLoading: debugLoading } = useExperiences(
+    { type: 'debug_note', limit: 100, enabled: mainTab === 'debug_notes' },
+    { refreshInterval: 30000 }
+  );
+
+  const rawEpisodes: Episode[] = (episodeData?.data || []).map(toEpisode);
   const allEpisodes: Episode[] = [
     ...rawEpisodes.filter(e => e.isPinned),
     ...rawEpisodes.filter(e => !e.isPinned),
@@ -93,23 +106,23 @@ export default function HomePage() {
   const totalPages = Math.max(1, Math.ceil(allEpisodes.length / PAGE_SIZE));
   const episodes = allEpisodes.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // Reset page when sort/filter changes
   const handleSort = (newSort: EpisodeSort) => { setSort(newSort); setPage(1); };
   const handleFilter = (newFilter: FilterKey) => { setFilter(newFilter); setPage(1); };
+  const handleMainTab = (tab: MainTab) => { setMainTab(tab); setPage(1); };
 
   return (
     <PageContainer>
       <div className="max-w-3xl mx-auto space-y-4">
-        {/* Sort tabs */}
+        {/* Main tabs: Episodes / DebugNotes */}
         <Card className="p-3">
           <div className="flex items-center gap-1 p-1 rounded-lg bg-muted">
-            {SORT_TABS.map(tab => (
+            {MAIN_TABS.map(tab => (
               <button
                 key={tab.value}
-                onClick={() => handleSort(tab.value)}
+                onClick={() => handleMainTab(tab.value)}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-                  sort === tab.value
+                  'flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                  mainTab === tab.value
                     ? 'bg-background shadow text-foreground'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
@@ -121,78 +134,109 @@ export default function HomePage() {
           </div>
         </Card>
 
-        {/* Filter chips */}
-        <div className="flex flex-wrap gap-2">
-          {FILTER_CHIPS.map(chip => (
-            <button
-              key={chip.key}
-              onClick={() => handleFilter(chip.key)}
-              className={cn(
-                'px-3 py-1 rounded-full text-sm font-medium transition-colors border',
-                filter === chip.key
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background text-muted-foreground border-border hover:border-primary/50'
-              )}
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
+        {/* Episode sub-controls */}
+        {mainTab === 'episodes' && (
+          <>
+            {/* Sort tabs */}
+            <Card className="p-3">
+              <div className="flex items-center gap-1 p-1 rounded-lg bg-muted">
+                {SORT_TABS.map(tab => (
+                  <button
+                    key={tab.value}
+                    onClick={() => handleSort(tab.value)}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                      sort === tab.value
+                        ? 'bg-background shadow text-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <span>{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </Card>
 
-        {/* Episode list */}
-        <EpisodeList episodes={episodes} isLoading={isLoading && allEpisodes.length === 0} />
+            {/* Filter chips */}
+            <div className="flex flex-wrap gap-2">
+              {FILTER_CHIPS.map(chip => (
+                <button
+                  key={chip.key}
+                  onClick={() => handleFilter(chip.key)}
+                  className={cn(
+                    'px-3 py-1 rounded-full text-sm font-medium transition-colors border',
+                    filter === chip.key
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background text-muted-foreground border-border hover:border-primary/50'
+                  )}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 py-4">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className={cn(
-                'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-                page === 1
-                  ? 'text-muted-foreground cursor-not-allowed'
-                  : 'bg-muted hover:bg-muted/80 text-foreground'
-              )}
-            >
-              Prev
-            </button>
+            {/* Episode list */}
+            <EpisodeList episodes={episodes} isLoading={episodesLoading && allEpisodes.length === 0} />
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={cn(
-                  'w-8 h-8 rounded-md text-sm font-medium transition-colors',
-                  p === page
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted hover:bg-muted/80 text-foreground'
-                )}
-              >
-                {p}
-              </button>
-            ))}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 py-4">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className={cn(
+                    'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                    page === 1
+                      ? 'text-muted-foreground cursor-not-allowed'
+                      : 'bg-muted hover:bg-muted/80 text-foreground'
+                  )}
+                >
+                  Prev
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={cn(
+                      'w-8 h-8 rounded-md text-sm font-medium transition-colors',
+                      p === page
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted hover:bg-muted/80 text-foreground'
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className={cn(
+                    'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                    page === totalPages
+                      ? 'text-muted-foreground cursor-not-allowed'
+                      : 'bg-muted hover:bg-muted/80 text-foreground'
+                  )}
+                >
+                  Next
+                </button>
+              </div>
+            )}
 
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className={cn(
-                'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-                page === totalPages
-                  ? 'text-muted-foreground cursor-not-allowed'
-                  : 'bg-muted hover:bg-muted/80 text-foreground'
-              )}
-            >
-              Next
-            </button>
-          </div>
+            {!episodesLoading && allEpisodes.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No episodes found</p>
+              </div>
+            )}
+          </>
         )}
 
-        {/* Empty state */}
-        {!isLoading && allEpisodes.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No episodes found</p>
-          </div>
+        {/* DebugNotes list */}
+        {mainTab === 'debug_notes' && (
+          <ExperienceList
+            experiences={debugData?.experiences || []}
+            isLoading={debugLoading}
+          />
         )}
       </div>
     </PageContainer>
