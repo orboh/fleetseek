@@ -26,12 +26,24 @@ async function migrate() {
     await pool.query('SELECT 1');
     console.log('Connected successfully.');
 
-    const schemaPath = path.join(__dirname, 'schema.sql');
-    const schema = fs.readFileSync(schemaPath, 'utf-8');
+    const migrations = [
+      'schema.sql',
+      '003_notifications.sql',
+      '004_experiences.sql',
+    ];
 
-    console.log('Running schema migration...');
-    await pool.query(schema);
-    console.log('Migration completed successfully.');
+    for (const file of migrations) {
+      const filePath = path.join(__dirname, file);
+      if (!fs.existsSync(filePath)) {
+        console.log(`Skipping ${file} (not found)`);
+        continue;
+      }
+      console.log(`Running ${file}...`);
+      const sql = fs.readFileSync(filePath, 'utf-8');
+      await pool.query(sql);
+      console.log(`  ${file} done.`);
+    }
+    console.log('All migrations completed successfully.');
   } catch (error) {
     console.error('Migration failed:', error.message);
     process.exit(1);

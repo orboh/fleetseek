@@ -1,5 +1,23 @@
 # Progress Log — FleetSeek DebugNote MVP-α
 
+## Session: 2026-04-28 (continued)
+
+### Phase 2: DB スキーマ設計・マイグレーション
+- **Status:** complete
+- Actions taken:
+  - `004_experiences.sql` 作成 (experiences, config_snapshots, experience_applications, robots 拡張)
+  - pgvector: 既存コンテナに `postgresql-16-pgvector` をインストールして `CREATE EXTENSION vector` 有効化
+  - docker-compose.yml を `pgvector/pgvector:pg16` イメージに更新
+  - migrate.js を順序付きマイグレーション実行に改修
+  - 既存 episodes 17 件を experiences (type='skill') に移行済み
+- Files created/modified:
+  - `apps/api/scripts/004_experiences.sql` (新規)
+  - `apps/api/scripts/migrate.js` (更新)
+  - `docker-compose.yml` (postgres イメージ変更)
+- 次フェーズ: Phase 3 (Backend API 実装)
+
+---
+
 ## Session: 2026-04-28
 
 ### Phase 1: 既存コードベース精査

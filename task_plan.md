@@ -4,28 +4,28 @@
 Orboh 社内で Claude Code が DebugNote を自動検索・自動投稿するループを回せる状態にする (MVP-α)。
 
 ## Current Phase
-Phase 1
+Phase 3
 
 ## Phases
 
 ### Phase 1: 既存コードベース精査
-- [ ] 既存 DB スキーマ (schema.sql) の確認
-- [ ] 既存 API ルート全体の把握 (後方互換境界の特定)
-- [ ] 既存 SDK (packages/sdk/) の把握
-- [ ] 既存フロントエンド型定義・コンポーネントの確認
-- [ ] 未確定事項 U3/U4 の解像度を上げる
-- **Status:** in_progress
+- [x] 既存 DB スキーマ (schema.sql) の確認
+- [x] 既存 API ルート全体の把握 (後方互換境界の特定)
+- [x] 既存 SDK (packages/sdk/) の把握
+- [x] 既存フロントエンド型定義・コンポーネントの確認
+- [x] 未確定事項 U3/U4 の解像度を上げる
+- **Status:** complete
 
 ### Phase 2: DB スキーマ設計・マイグレーション
-- [ ] `experiences` テーブル設計 (Experience 基底)
-- [ ] `debug_experiences` / `skill_experiences` サブテーブル (or JSONB)
-- [ ] `robots` テーブル拡張 (L1/L2/L3)
-- [ ] `config_snapshots` テーブル
-- [ ] `experience_applications` テーブル (適用結果)
-- [ ] pgvector embedding カラム追加
-- [ ] マイグレーションファイル作成 (`apps/api/scripts/004_experiences.sql`)
-- [ ] 既存 Skill データの移行スクリプト
-- **Status:** pending
+- [x] `experiences` テーブル設計 (Experience 基底, STI + JSONB)
+- [x] `debug_experiences` / `skill_experiences` → JSONB `data` カラム
+- [x] `robots` テーブル拡張 (L2: serial_number/mac_address/hw_revision, L1: fleetseek_id)
+- [x] `config_snapshots` テーブル (L3)
+- [x] `experience_applications` テーブル (適用結果)
+- [x] pgvector embedding カラム追加 (vector(1536), HNSW インデックス)
+- [x] マイグレーションファイル作成 (`apps/api/scripts/004_experiences.sql`)
+- [x] 既存 Skill データの移行スクリプト (episodes → experiences, 17 件移行済み)
+- **Status:** complete
 
 ### Phase 3: Backend API 実装
 - [ ] `POST /api/experiences` — 投稿
