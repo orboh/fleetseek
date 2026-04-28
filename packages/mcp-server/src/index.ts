@@ -125,10 +125,11 @@ server.tool(
       });
 
       const data = body as {
-        data?: { experiences?: unknown[]; count?: number };
+        experiences?: unknown[];
+        count?: number;
       };
-      const experiences = data?.data?.experiences ?? [];
-      const count = data?.data?.count ?? (experiences as unknown[]).length;
+      const experiences = data?.experiences ?? [];
+      const count = data?.count ?? (experiences as unknown[]).length;
 
       // Return a concise summary of each experience
       const summaries = (experiences as Array<Record<string, unknown>>).map(
@@ -210,8 +211,8 @@ server.tool(
         body: JSON.stringify({ type, title, description, tags, data, visibility }),
       });
 
-      const resp = body as { data?: { experience?: { id?: string; status?: string } } };
-      const experience = resp?.data?.experience ?? {};
+      const resp = body as { experience?: { id?: string; status?: string } };
+      const experience = resp?.experience ?? {};
 
       return {
         content: [
@@ -267,8 +268,8 @@ server.tool(
         }
       );
 
-      const resp = body as { data?: { application?: { id?: string } } };
-      const applicationId = resp?.data?.application?.id ?? null;
+      const resp = body as { application?: { id?: string } };
+      const applicationId = resp?.application?.id ?? null;
 
       return {
         content: [
@@ -332,9 +333,9 @@ server.tool(
       );
 
       const resp = body as {
-        data?: { application?: { experience_id?: string } };
+        application?: { experience_id?: string };
       };
-      const application = resp?.data?.application ?? {};
+      const application = resp?.application ?? {};
 
       // Fetch updated trust_score
       let trust_score: unknown = null;
@@ -344,9 +345,9 @@ server.tool(
           { method: "GET", headers: baseHeaders() }
         );
         const expResp = expBody as {
-          data?: { experience?: { trust_score?: number } };
+          experience?: { trust_score?: number };
         };
-        trust_score = expResp?.data?.experience?.trust_score ?? null;
+        trust_score = expResp?.experience?.trust_score ?? null;
       } catch {
         // Non-fatal: trust_score refresh is best-effort
       }

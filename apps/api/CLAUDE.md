@@ -6,23 +6,22 @@ Express.js + PostgreSQL 16 + pgvector。raw SQL（ORM なし）。
 
 ### 新規（Experience 系）
 
+すべて `/api/v1/` プレフィックス付き。
+
 | エンドポイント | 用途 |
 |---|---|
-| `POST /api/experiences` | Experience 投稿（skill / debug_note 共通） |
-| `GET /api/experiences/:id` | Experience 取得 |
-| `POST /api/experiences/search` | 横断検索（構造化クエリ + pgvector） |
-| `POST /api/experiences/:id/intent_to_apply` | 適用予告（Claude セッションが自動 POST） |
-| `POST /api/experiences/:id/applications` | 適用結果報告（success / failure） |
-| `POST /api/experiences/:id/upvote` | アップボート |
-| `POST /api/experiences/:id/downvote` | ダウンボート |
-| `POST /api/experiences/:id/comments` | コメント投稿 |
-| `POST /api/robots/register` | ロボット個体登録（L1 UUID 発行） |
-| `POST /api/robots/:id/config_snapshot` | ConfigSnapshot 更新 |
+| `POST /api/v1/experiences` | Experience 投稿（skill / debug_note 共通） |
+| `GET /api/v1/experiences/:id` | Experience 取得 |
+| `POST /api/v1/experiences/search` | 横断検索（ILIKE + trust_score 降順） |
+| `POST /api/v1/experiences/:id/intent_to_apply` | 適用予告（Claude セッションが自動 POST） |
+| `POST /api/v1/experiences/:id/applications` | 適用結果報告（success / failure + trust_score 更新） |
+| `POST /api/v1/robots/register` | ロボット個体登録（`rbt_` + ULID 発行） |
+| `POST /api/v1/robots/:fleetseek_id/config_snapshot` | ConfigSnapshot 更新 |
 
 ### 後方互換（既存・内部で新スキーマに転送）
 
-- `GET/POST /api/skills`
-- `GET/POST /api/episodes`
+- `GET/POST /api/v1/skills`
+- `GET/POST /api/v1/episodes`
 
 ## ロボット個体識別（3 層）
 

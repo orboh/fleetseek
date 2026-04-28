@@ -73,10 +73,10 @@ router.post('/', requireAuth, asyncHandler(async (req, res) => {
       req.agent.id,
       title,
       description || null,
-      tags ? JSON.stringify(tags) : null,
-      applicability ? JSON.stringify(applicability) : null,
-      provenance ? JSON.stringify(provenance) : null,
-      data ? JSON.stringify(data) : null,
+      tags || null,
+      JSON.stringify(applicability || {}),
+      JSON.stringify(provenance || {}),
+      JSON.stringify(data || {}),
       visibility,
       JSON.stringify(initialTrustSignals)
     ]

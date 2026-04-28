@@ -167,25 +167,14 @@ router.post('/register', requireAuth, asyncHandler(async (req, res) => {
        model, manufacturer, dof,
        has_hand, hand_model,
        serial_number, mac_address, hw_revision,
-       created_at, updated_at
+       created_at
      ) VALUES (
        $1, $2,
        $3, $4, $5,
        $6, $7,
        $8, $9, $10,
-       NOW(), NOW()
+       NOW()
      )
-     ON CONFLICT (serial_number) WHERE serial_number IS NOT NULL
-     DO UPDATE SET
-       fleetseek_id   = EXCLUDED.fleetseek_id,
-       model          = EXCLUDED.model,
-       manufacturer   = EXCLUDED.manufacturer,
-       dof            = EXCLUDED.dof,
-       has_hand       = EXCLUDED.has_hand,
-       hand_model     = EXCLUDED.hand_model,
-       mac_address    = EXCLUDED.mac_address,
-       hw_revision    = EXCLUDED.hw_revision,
-       updated_at     = NOW()
      RETURNING *`,
     [
       fleetseekId,

@@ -4,7 +4,7 @@
 Orboh 社内で Claude Code が DebugNote を自動検索・自動投稿するループを回せる状態にする (MVP-α)。
 
 ## Current Phase
-Phase 8 (統合テスト)
+MVP-α 完了 (全 Phase 1–8 done)
 
 ## Phases
 
@@ -72,10 +72,10 @@ Phase 8 (統合テスト)
 - **Status:** complete
 
 ### Phase 8: 統合テスト・ドキュメント
-- [ ] ローカルでの E2E 動作確認
-- [ ] API ドキュメント更新
-- [ ] MCP サーバーのローカル動作確認
-- **Status:** pending
+- [x] ローカルでの E2E 動作確認
+- [x] API ドキュメント更新 (skill.md / README.md / CLAUDE.md)
+- [x] MCP サーバーのローカル動作確認
+- **Status:** complete
 
 ## Key Questions
 1. 既存 `experiences` テーブルはすでに存在するか? (schema.sql 確認要)
@@ -93,10 +93,37 @@ Phase 8 (統合テスト)
 | CLI robot register は U1 解決前は stub 実装 | Unitree SDK API 未確定のため、フロー確認を優先 |
 | 後方互換 API は内部転送 (リダイレクトなし) | SDK の URL ハードコードを避けるため |
 
+## E2E Test Results (Phase 8 — 2026-04-28)
+| Test | Status |
+|------|--------|
+| POST /experiences (debug_note) | PASS |
+| GET /experiences/:id | PASS |
+| POST /experiences/search | PASS |
+| POST intent_to_apply | PASS |
+| POST applications (trust_score 更新) | PASS |
+| POST /robots/register | PASS |
+| POST /robots/:id/config_snapshot | PASS |
+| GET /episodes (backward compat) | PASS |
+| MCP experience_search | PASS |
+| MCP experience_post | PASS |
+| MCP experience_apply_intent | PASS |
+| MCP experience_apply_result | PASS |
+| MCP robot_get_context | PASS |
+
+## Bugs Fixed During Testing
+| Bug | File | Fix |
+|-----|------|-----|
+| tags JSON.stringify で malformed array | experiences.js:76 | `tags \|\| null` |
+| applicability/provenance/data null 制約違反 | experiences.js:77-79 | `JSON.stringify(x \|\| {})` |
+| robots INSERT に updated_at/ON CONFLICT が不整合 | robots.js | 当該句を削除 |
+| MCP レスポンスパース `data.data.X` が誤り | mcp-server/index.ts | `data.X` に修正 + rebuild |
+
 ## Errors Encountered
 | Error | Attempt | Resolution |
 |-------|---------|------------|
-| (なし) | — | — |
+| ulid module missing | 1 | `cd apps/api && npm install ulid` |
+| port 5432 conflict | 1 | robonet-postgres-1 が既に起動中、そのまま使用 |
+| port 3001 EADDRINUSE | 1 | `fuser -k 3001/tcp` でクリア |
 
 ## Notes
 - 未確定事項 U1 (Unitree SDK 個体情報 API) は CLI Phase 6 着手時に解決

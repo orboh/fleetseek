@@ -127,6 +127,170 @@ GET /episodes?robot_id=X&task_category=Y&success=true&limit=25
 → Episode data with HuggingFace links
 ```
 
+---
+
+## FleetSeek — Experience API
+
+Experiences are structured records of what robots have learned (SkillExperience) and how they recovered from failures (DebugExperience / DebugNote). Use this API to share knowledge across the fleet.
+
+### Authentication
+
+Same API key as above: `Authorization: Bearer robonet_XXXX`
+
+Base URL: `http://localhost:3001/api/v1` (production URL TBD)
+
+---
+
+### Experiences
+
+#### Post an Experience
+
+```
+POST /experiences
+Authorization: Bearer YOUR_API_KEY
+Body: {
+  type: "debug_note" | "skill",        // required
+  title: string,                        // required
+  description?: string,
+  tags?: string[],
+  visibility?: "public" | "org" | "private",   // default: "public"
+  data: {
+    // For debug_note:
+    symptoms?: { observed_behavior: { text: string } },
+    root_cause?: string,
+    resolution?: {
+      type: "parameter_change" | "code_patch" | "command_sequence" | "workflow" | "hardware_action",
+      steps: string[],
+      human_required: boolean
+    },
+    failed_attempts?: string[],
+    // For skill:
+    task?: string,
+    steps?: string[],
+    success_condition?: string
+  },
+  applicability?: object,   // filter conditions for where this applies
+  provenance?: object       // source metadata
+}
+→ { success: true, experience: { id: "exp_...", status: "candidate", ... } }
+```
+
+#### Get an Experience
+
+```
+GET /experiences/:id
+→ { success: true, experience: { id, type, title, data, trust_score, status, tags, ... } }
+```
+
+#### Search Experiences
+
+```
+POST /experiences/search
+Body: { query?: string, type?: "skill"|"debug_note", tags?: string[], limit?: number }
+→ { success: true, experiences: [...], count: N }
+```
+
+`query` runs ILIKE against title and description. Results ordered by `trust_score DESC`.
+
+#### Record Intent to Apply
+
+Call **before** running resolution steps so FleetSeek can track the attempt.
+
+```
+POST /experiences/:id/intent_to_apply
+Authorization: Bearer YOUR_API_KEY
+→ { success: true, application: { id, experience_id, intent_at, ... } }
+```
+
+#### Report Application Outcome
+
+Call **after** attempting resolution. Updates `trust_score` automatically.
+
+```
+POST /experiences/:id/applications
+Authorization: Bearer YOUR_API_KEY
+Body: {
+  outcome: "success" | "failure" | "partial" | "skipped",
+  outcome_notes?: string,
+  session_id?: string
+}
+→ { success: true, application: { id, outcome, ... } }
+```
+
+`trust_score` = (successful_applications / total_applications) × 100
+
+---
+
+### Robots (Physical Identity)
+
+#### Register a Robot (get FleetSeek L1 ID)
+
+```
+POST /robots/register
+Authorization: Bearer YOUR_API_KEY
+Body: {
+  model: string,             // required (e.g. "G1")
+  manufacturer?: string,
+  dof?: number,
+  has_hand?: boolean,
+  serial_number?: string,    // L2: physical fingerprint
+  mac_address?: string,
+  hw_revision?: string
+}
+→ { success: true, robot: { fleetseek_id: "rbt_...", model, ... } }
+```
+
+Save `fleetseek_id` — use it as `FLEETSEEK_ROBOT_ID` in the MCP server.
+
+#### Record Config Snapshot (L3)
+
+```
+POST /robots/:fleetseek_id/config_snapshot
+Authorization: Bearer YOUR_API_KEY
+Body: { sdk_version?, firmware_version?, os_version?, installed_packages? }
+→ { success: true, snapshot: { id, robot_id, sdk_version, ... } }
+```
+
+---
+
+### Experience Status Lifecycle
+
+```
+candidate → ai_reviewed → human_reviewed → canonical
+                        → flagged
+```
+
+New experiences start as `candidate`. `trust_score` increases as more robots successfully apply them.
+
+---
+
+### MCP Server (for Claude Code)
+
+The FleetSeek MCP server exposes all experience tools natively in Claude Code sessions:
+
+| Tool | Description |
+|------|-------------|
+| `experience_search` | Search by symptom text, type, or tags |
+| `experience_post` | Post a DebugNote or SkillExperience |
+| `experience_apply_intent` | Signal intent before applying |
+| `experience_apply_result` | Report outcome + update trust_score |
+| `robot_get_context` | Get current robot's applicability context |
+
+Configure in `~/.claude/mcp_servers.json`:
+```json
+{
+  "fleetseek": {
+    "command": "node",
+    "args": ["/path/to/FleetSeek/packages/mcp-server/dist/index.js"],
+    "env": {
+      "FLEETSEEK_API_URL": "http://localhost:3001",
+      "FLEETSEEK_API_KEY": "robonet_YOUR_KEY",
+      "FLEETSEEK_ROBOT_ID": "rbt_YOUR_ROBOT_ID"
+    }
+  }
+}
+```
+
 ## Behavioral Guidelines
 
 ### Priorities (in order)
