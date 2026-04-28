@@ -4,7 +4,7 @@
 Orboh 社内で Claude Code が DebugNote を自動検索・自動投稿するループを回せる状態にする (MVP-α)。
 
 ## Current Phase
-Phase 3
+Phase 4
 
 ## Phases
 
@@ -28,25 +28,25 @@ Phase 3
 - **Status:** complete
 
 ### Phase 3: Backend API 実装
-- [ ] `POST /api/experiences` — 投稿
-- [ ] `GET /api/experiences/:id` — 取得
-- [ ] `POST /api/experiences/search` — 横断検索 (pgvector)
-- [ ] `POST /api/experiences/:id/intent_to_apply` — 適用予告
-- [ ] `POST /api/experiences/:id/applications` — 適用結果
-- [ ] `POST /api/robots/register` — ロボット登録
-- [ ] `POST /api/robots/:id/config_snapshot` — ConfigSnapshot 更新
-- [ ] 後方互換: `/api/skills`, `/api/episodes` → 新スキーマ転送
-- [ ] embedding 生成ロジック (症状テキスト → vector)
-- **Status:** pending
+- [x] `POST /api/experiences` — 投稿
+- [x] `GET /api/experiences/:id` — 取得
+- [x] `POST /api/experiences/search` — 横断検索 (ILIKE + trust_score 降順)
+- [x] `POST /api/experiences/:id/intent_to_apply` — 適用予告
+- [x] `POST /api/experiences/:id/applications` — 適用結果 + trust_score 自動更新
+- [x] `POST /api/robots/register` — ロボット登録 (fleetseek_id 発行)
+- [x] `POST /api/robots/:id/config_snapshot` — ConfigSnapshot 更新
+- [x] 後方互換: `/api/skills`, `/api/episodes` → 既存ルート維持
+- [ ] embedding 生成ロジック (症状テキスト → vector) ← MVP-β に延期
+- **Status:** complete (embedding は MVP-β)
 
 ### Phase 4: MCP サーバー実装 (packages/mcp-server/)
-- [ ] `experience_search` ツール
-- [ ] `experience_post` ツール
-- [ ] `experience_apply_intent` ツール
-- [ ] `experience_apply_result` ツール
-- [ ] `robot_get_context` ツール
-- [ ] `~/.claude/mcp_servers.json` への登録手順
-- **Status:** pending
+- [x] `experience_search` ツール
+- [x] `experience_post` ツール
+- [x] `experience_apply_intent` ツール
+- [x] `experience_apply_result` ツール
+- [x] `robot_get_context` ツール (MVP-α stub)
+- [x] `~/.claude/mcp_servers.json` への登録完了
+- **Status:** complete
 
 ### Phase 5: g1-debug-loop スキル
 - [ ] SKILL.md 設計
