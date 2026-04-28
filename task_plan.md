@@ -4,7 +4,7 @@
 Orboh 社内で Claude Code が DebugNote を自動検索・自動投稿するループを回せる状態にする (MVP-α)。
 
 ## Current Phase
-Phase 5
+Phase 8 (統合テスト)
 
 ## Phases
 
@@ -58,16 +58,18 @@ Phase 5
 - **Status:** complete
 
 ### Phase 6: CLI 基礎 (packages/cli/)
-- [ ] `fleetseek auth login`
-- [ ] `fleetseek robot register` (Unitree SDK 連携は U1 解決後)
-- [ ] `fleetseek session start`
-- [ ] `install.sh` スクリプト
-- **Status:** pending
+- [x] `fleetseek auth login` (conf で ~/.config/fleetseek/config.json 保存)
+- [x] `fleetseek robot register` (fleetseek_id を config に保存)
+- [x] `fleetseek session start` (FLEETSEEK_ROBOT_ID 設定手順を表示)
+- [x] `fleetseek search <query>` (--type フィルタ付き ASCII テーブル表示)
+- [x] `install.sh` スクリプト
+- OSS 採用: commander v14 / @inquirer/prompts v7 / conf v13
+- **Status:** complete
 
 ### Phase 7: SDK 拡張 (packages/sdk/)
-- [ ] `client.experiences.*` 追加
-- [ ] 既存 `client.skills.*`, `client.episodes.*` の後方互換維持
-- **Status:** pending
+- [x] `client.experiences.*` 7 メソッド追加
+- [x] 既存 `client.skills.*`, `client.episodes.*` の後方互換維持
+- **Status:** complete
 
 ### Phase 8: 統合テスト・ドキュメント
 - [ ] ローカルでの E2E 動作確認
