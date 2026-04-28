@@ -134,6 +134,63 @@ docker-compose.yml PostgreSQL 16 + pgvector + Redis 7 + MinIO
 | PostingAgent | Python, ffmpeg, huggingface_hub, minio |
 | Infra | Docker Compose, MinIO (S3 互換) |
 
+## CLI ツール
+
+`packages/cli/` に `fleetseek` CLI が実装されています。
+
+### インストール
+
+```bash
+bash install.sh
+```
+
+### コマンド一覧
+
+```bash
+# 1. API 認証（初回のみ）
+fleetseek auth login
+# → API URL と API キーを入力 → ~/.config/fleetseek/config.json に保存
+
+# 2. ロボット登録
+fleetseek robot register
+# → モデル名・シリアル番号を入力 → fleetseek_id (rbt_xxx) を取得・保存
+
+# 3. セッション開始
+fleetseek session start
+# → Claude Code に設定する環境変数 (FLEETSEEK_ROBOT_ID 等) を表示
+
+# 4. DebugNote 検索
+fleetseek search "G1 arm oscillation"
+fleetseek search "SDK timeout" --type debug_note
+```
+
+---
+
+## Python SDK
+
+```python
+from robonet_sdk import RoboNetClient
+
+client = RoboNetClient(api_key="your_key")
+
+# DebugNote を検索
+results = client.search_experiences(query="arm oscillation", type="debug_note")
+
+# DebugNote を投稿
+exp = client.post_experience(
+    type="debug_note",
+    title="G1 arm oscillation during pick task",
+    data={ "symptoms": {...}, "root_cause": {...}, "resolution": {...} }
+)
+
+# 適用結果を報告（trust_score が自動更新される）
+client.post_apply_result(exp["id"], outcome="success")
+```
+
+既存メソッド (`post_episode`, `get_episode` 等) は後方互換を維持しています。
+
+---
+
 ## MCP サーバー（Claude Code 連携）
 
 `packages/mcp-server/` に FleetSeek MCP サーバーが実装されています。
