@@ -16,6 +16,7 @@ const episodeRoutes = require('./episodes');
 const robotRoutes = require('./robots');
 const homeRoutes = require('./home');
 const notificationRoutes = require('./notifications');
+const experienceRoutes = require('./experiences');
 
 const router = Router();
 
@@ -31,6 +32,7 @@ router.use('/feed', feedRoutes);
 router.use('/search', searchRoutes);
 router.use('/episodes', episodeRoutes);
 router.use('/robots', robotRoutes);
+router.use('/experiences', experienceRoutes);
 router.use('/home', homeRoutes);
 router.use('/notifications', notificationRoutes);
 
