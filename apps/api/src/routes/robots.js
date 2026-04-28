@@ -5,9 +5,11 @@
 
 const { Router } = require('express');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { success } = require('../utils/response');
+const { requireAuth } = require('../middleware/auth');
+const { success, created } = require('../utils/response');
 const { queryOne, queryAll } = require('../config/database');
-const { NotFoundError } = require('../utils/errors');
+const { NotFoundError, BadRequestError } = require('../utils/errors');
+const { generateRobotId } = require('../utils/id');
 
 const router = Router();
 
@@ -131,6 +133,121 @@ router.get('/:id/stats', asyncHandler(async (req, res) => {
       count: parseInt(d.count),
     })),
   });
+}));
+
+/**
+ * POST /robots/register
+ * Register a physical robot and obtain a FleetSeek L1 ID (rbt_ + ULID).
+ * Requires API key authentication.
+ * Body: { model, manufacturer, dof, has_hand, hand_model, serial_number, mac_address, hw_revision }
+ */
+router.post('/register', requireAuth, asyncHandler(async (req, res) => {
+  const {
+    model,
+    manufacturer,
+    dof,
+    has_hand = false,
+    hand_model = null,
+    serial_number = null,
+    mac_address = null,
+    hw_revision = null
+  } = req.body;
+
+  if (!model) {
+    throw new BadRequestError('model is required');
+  }
+
+  const fleetseekId = generateRobotId();
+
+  // Upsert: if a robot with the same serial_number already exists, update it;
+  // otherwise insert a new record.
+  const robot = await queryOne(
+    `INSERT INTO robots (
+       fleetseek_id, agent_id,
+       model, manufacturer, dof,
+       has_hand, hand_model,
+       serial_number, mac_address, hw_revision,
+       created_at, updated_at
+     ) VALUES (
+       $1, $2,
+       $3, $4, $5,
+       $6, $7,
+       $8, $9, $10,
+       NOW(), NOW()
+     )
+     ON CONFLICT (serial_number) WHERE serial_number IS NOT NULL
+     DO UPDATE SET
+       fleetseek_id   = EXCLUDED.fleetseek_id,
+       model          = EXCLUDED.model,
+       manufacturer   = EXCLUDED.manufacturer,
+       dof            = EXCLUDED.dof,
+       has_hand       = EXCLUDED.has_hand,
+       hand_model     = EXCLUDED.hand_model,
+       mac_address    = EXCLUDED.mac_address,
+       hw_revision    = EXCLUDED.hw_revision,
+       updated_at     = NOW()
+     RETURNING *`,
+    [
+      fleetseekId,
+      req.agent.id,
+      model,
+      manufacturer || null,
+      dof || null,
+      has_hand,
+      hand_model,
+      serial_number,
+      mac_address,
+      hw_revision
+    ]
+  );
+
+  created(res, { robot });
+}));
+
+/**
+ * POST /robots/:id/config_snapshot
+ * Record a new ConfigSnapshot (L3) for the given robot (by fleetseek_id).
+ * Requires API key authentication.
+ * Body: { sdk_version, firmware_version, os_version, installed_packages }
+ */
+router.post('/:id/config_snapshot', requireAuth, asyncHandler(async (req, res) => {
+  const fleetseekId = req.params.id;
+
+  const robotRecord = await queryOne(
+    `SELECT id FROM robots WHERE fleetseek_id = $1`,
+    [fleetseekId]
+  );
+
+  if (!robotRecord) {
+    throw new NotFoundError('Robot');
+  }
+
+  const {
+    sdk_version = null,
+    firmware_version = null,
+    os_version = null,
+    installed_packages = null
+  } = req.body;
+
+  const snapshot = await queryOne(
+    `INSERT INTO config_snapshots (
+       robot_id, sdk_version, firmware_version,
+       os_version, installed_packages, created_at
+     ) VALUES (
+       $1, $2, $3,
+       $4, $5, NOW()
+     )
+     RETURNING *`,
+    [
+      fleetseekId,
+      sdk_version,
+      firmware_version,
+      os_version,
+      installed_packages ? JSON.stringify(installed_packages) : null
+    ]
+  );
+
+  created(res, { snapshot });
 }));
 
 module.exports = router;
