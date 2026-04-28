@@ -27,6 +27,7 @@ const SEED_EXPERIENCES = [
   {
     id: 'exp_01HWDEBUG00000000000000001',
     type: 'debug_note',
+    robot_id: 'rbt_01HWSEEDROBOT0000000000001',
     title: 'G1 arm oscillation during pick task',
     tags: ['g1', 'oscillation'],
     trust_score: 87,
@@ -72,7 +73,7 @@ const SEED_EXPERIENCES = [
     },
     provenance: {
       source: 'manual',
-      author_robot_id: 'rbt_01HWSEEDROBOT0000000000001',
+      robot_id: 'rbt_01HWSEEDROBOT0000000000001',
     },
     trust_signals: {
       application_count: 12,
@@ -84,6 +85,7 @@ const SEED_EXPERIENCES = [
   {
     id: 'exp_01HWDEBUG00000000000000002',
     type: 'debug_note',
+    robot_id: 'rbt_01HWSEEDROBOT0000000000001',
     title: 'Joint position limit error on left elbow',
     tags: ['g1', 'joint_error'],
     trust_score: 72,
@@ -128,7 +130,7 @@ const SEED_EXPERIENCES = [
     },
     provenance: {
       source: 'manual',
-      author_robot_id: 'rbt_01HWSEEDROBOT0000000000001',
+      robot_id: 'rbt_01HWSEEDROBOT0000000000001',
     },
     trust_signals: {
       application_count: 7,
@@ -140,6 +142,7 @@ const SEED_EXPERIENCES = [
   {
     id: 'exp_01HWDEBUG00000000000000003',
     type: 'debug_note',
+    robot_id: 'rbt_01HWSEEDROBOT0000000000001',
     title: 'Unitree SDK connection timeout after network change',
     tags: ['g1', 'sdk'],
     trust_score: 65,
@@ -195,7 +198,7 @@ const SEED_EXPERIENCES = [
     },
     provenance: {
       source: 'manual',
-      author_robot_id: 'rbt_01HWSEEDROBOT0000000000001',
+      robot_id: 'rbt_01HWSEEDROBOT0000000000001',
     },
     trust_signals: {
       application_count: 5,
@@ -217,18 +220,19 @@ async function seed() {
       // Use INSERT ... ON CONFLICT DO NOTHING for idempotent re-runs
       await client.query(
         `INSERT INTO experiences (
-          id, type, title, tags, trust_score, status,
+          id, type, title, robot_id, tags, trust_score, status,
           data, applicability, provenance, trust_signals,
           created_at, updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6,
-          $7, $8, $9, $10,
+          $1, $2, $3, $4, $5, $6, $7,
+          $8, $9, $10, $11,
           NOW(), NOW()
         ) ON CONFLICT (id) DO NOTHING`,
         [
           exp.id,
           exp.type,
           exp.title,
+          exp.robot_id,
           exp.tags,
           exp.trust_score,
           exp.status,

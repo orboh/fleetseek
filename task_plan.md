@@ -4,7 +4,7 @@
 Orboh 社内で Claude Code が DebugNote を自動検索・自動投稿するループを回せる状態にする (MVP-α)。
 
 ## Current Phase
-Phase 4
+Phase 5
 
 ## Phases
 
@@ -49,12 +49,13 @@ Phase 4
 - **Status:** complete
 
 ### Phase 5: g1-debug-loop スキル
-- [ ] SKILL.md 設計
-- [ ] タスク開始時の `experience_search` 自動呼び出し
-- [ ] `task_plan.md` 冒頭への検索結果自動転記
-- [ ] Stop hook で `/debug-harvest` を促す仕組み
-- [ ] `intent_to_apply` 自動 POST ロジック
-- **Status:** pending
+- [x] SKILL.md 設計 (`.claude/skills/g1-debug-loop/SKILL.md`)
+- [x] タスク開始時の `experience_search` 自動呼び出し手順
+- [x] `task_plan.md` 冒頭への検索結果自動転記ルール
+- [x] `/debug-harvest` コマンド仕様 (`debug-harvest.md`)
+- [x] `intent_to_apply` 自動 POST ロジック
+- [x] シードデータ 3 件投入済み (arm oscillation / joint limit / SDK timeout)
+- **Status:** complete
 
 ### Phase 6: CLI 基礎 (packages/cli/)
 - [ ] `fleetseek auth login`
