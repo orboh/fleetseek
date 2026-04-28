@@ -134,6 +134,61 @@ docker-compose.yml PostgreSQL 16 + pgvector + Redis 7 + MinIO
 | PostingAgent | Python, ffmpeg, huggingface_hub, minio |
 | Infra | Docker Compose, MinIO (S3 互換) |
 
+## MCP サーバー（Claude Code 連携）
+
+`packages/mcp-server/` に FleetSeek MCP サーバーが実装されています。
+Claude Code セッションから直接 DebugNote の検索・投稿・適用報告が行えます。
+
+### ビルド
+
+```bash
+cd packages/mcp-server
+npm install
+npm run build   # dist/ に出力
+```
+
+### Claude Code への登録
+
+`~/.claude/mcp_servers.json` に追記:
+
+```json
+{
+  "fleetseek": {
+    "command": "node",
+    "args": ["/home/kota-ueda/Desktop/FleetSeek/packages/mcp-server/dist/index.js"],
+    "env": {
+      "FLEETSEEK_API_URL": "http://localhost:3001",
+      "FLEETSEEK_API_KEY": "your_api_key",
+      "FLEETSEEK_ROBOT_ID": "rbt_xxxx"
+    }
+  }
+}
+```
+
+### 利用可能なツール
+
+| ツール | 説明 | 認証 |
+|---|---|---|
+| `experience_search` | 症状・キーワードで Experience を検索 | 不要 |
+| `experience_post` | DebugNote / Skill を投稿 | 必要 |
+| `experience_apply_intent` | 適用前に予告を送信 | 必要 |
+| `experience_apply_result` | 適用結果を報告（trust_score 自動更新） | 必要 |
+| `robot_get_context` | ロボット ID をコンテキストとして返す | 不要 |
+
+### 典型的なデバッグフロー
+
+```
+1. experience_search { query: "arm torque limit exceeded" }
+   → 過去の解決策が trust_score 順で返される
+2. experience_apply_intent { experience_id: "exp_..." }
+   → 適用開始を記録
+3. ロボットで解決策を実行
+4. experience_apply_result { experience_id: "exp_...", outcome: "success" }
+   → trust_score が自動更新される
+```
+
+---
+
 ## 注意事項
 
 - `trust_score` は `trust_signals` から自動計算されるため直接書き込まないこと
