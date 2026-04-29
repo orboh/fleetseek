@@ -16,8 +16,8 @@ const PAGE_SIZE = 20;
 type MainTab = 'episodes' | 'debug_notes';
 
 const MAIN_TABS: { value: MainTab; label: string; icon: string }[] = [
-  { value: 'episodes',    label: 'Skill Episodes', icon: '🤖' },
-  { value: 'debug_notes', label: 'DebugNotes',     icon: '🔧' },
+  { value: 'debug_notes', label: 'DebugNotes',                         icon: '🔧' },
+  { value: 'episodes',    label: 'Future AI Agent Sharing Skills',     icon: '🤖' },
 ];
 
 /** Sort tabs for episodes */
@@ -78,7 +78,7 @@ function toEpisode(row: Record<string, unknown>): Episode {
 }
 
 export default function HomePage() {
-  const [mainTab, setMainTab] = useState<MainTab>('episodes');
+  const [mainTab, setMainTab] = useState<MainTab>('debug_notes');
   const [sort, setSort] = useState<EpisodeSort>('new');
   const [filter, setFilter] = useState<FilterKey>('all');
   const [page, setPage] = useState(1);
