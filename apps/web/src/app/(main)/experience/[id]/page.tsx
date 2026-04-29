@@ -122,7 +122,10 @@ export default function ExperienceDetailPage() {
                           <AlertTriangle className="h-4 w-4" />
                           Symptoms
                         </h2>
-                        {debugData.symptoms.observed_behavior?.text && (
+                        {typeof debugData.symptoms === 'string' ? (
+                          <p className="text-sm bg-muted/50 rounded p-3 whitespace-pre-wrap">{debugData.symptoms}</p>
+                        ) : null}
+                        {typeof debugData.symptoms === 'object' && debugData.symptoms.observed_behavior?.text && (
                           <div className="mb-3">
                             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Observed Behavior</p>
                             <p className="text-sm bg-muted/50 rounded p-3 whitespace-pre-wrap">
@@ -174,49 +177,61 @@ export default function ExperienceDetailPage() {
                         <h2 className="font-semibold mb-3 flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                           <CheckCircle className="h-4 w-4" />
                           Resolution
-                          {debugData.resolution.type && (
+                          {typeof debugData.resolution === 'object' && debugData.resolution.type && (
                             <span className="ml-auto text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 font-medium normal-case">
                               {debugData.resolution.type.replace('_', ' ')}
                             </span>
                           )}
                         </h2>
-                        {debugData.resolution.summary && (
-                          <p className="text-sm bg-muted/50 rounded p-3 whitespace-pre-wrap mb-3">
-                            {debugData.resolution.summary}
-                          </p>
-                        )}
-                        {debugData.resolution.human_required && (
-                          <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                            <AlertTriangle className="h-3.5 w-3.5" />
-                            Human intervention required
-                          </p>
-                        )}
-                        {debugData.resolution.changes && Object.keys(debugData.resolution.changes).length > 0 && (
-                          <div className="mt-3">
-                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Changes</p>
-                            <pre className="text-xs bg-muted rounded p-3 overflow-auto max-h-48 whitespace-pre-wrap">
-                              {JSON.stringify(debugData.resolution.changes, null, 2)}
-                            </pre>
-                          </div>
+                        {typeof debugData.resolution === 'string' ? (
+                          <p className="text-sm bg-muted/50 rounded p-3 whitespace-pre-wrap">{debugData.resolution}</p>
+                        ) : (
+                          <>
+                            {debugData.resolution.summary && (
+                              <p className="text-sm bg-muted/50 rounded p-3 whitespace-pre-wrap mb-3">
+                                {debugData.resolution.summary}
+                              </p>
+                            )}
+                            {debugData.resolution.human_required && (
+                              <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                <AlertTriangle className="h-3.5 w-3.5" />
+                                Human intervention required
+                              </p>
+                            )}
+                            {debugData.resolution.changes && Object.keys(debugData.resolution.changes).length > 0 && (
+                              <div className="mt-3">
+                                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Changes</p>
+                                <pre className="text-xs bg-muted rounded p-3 overflow-auto max-h-48 whitespace-pre-wrap">
+                                  {JSON.stringify(debugData.resolution.changes, null, 2)}
+                                </pre>
+                              </div>
+                            )}
+                          </>
                         )}
                       </Card>
                     )}
 
                     {/* Failed Attempts */}
-                    {debugData.failed_attempts && debugData.failed_attempts.length > 0 && (
+                    {debugData.failed_attempts && (
                       <Card className="p-5">
                         <h2 className="font-semibold mb-3 text-muted-foreground flex items-center gap-2">
                           <Clock className="h-4 w-4" />
                           Failed Attempts
                         </h2>
-                        <ul className="space-y-2">
-                          {debugData.failed_attempts.map((attempt, i) => (
-                            <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                              <span className="text-xs font-medium bg-muted rounded px-1.5 py-0.5 mt-0.5 shrink-0">{i + 1}</span>
-                              {attempt}
-                            </li>
-                          ))}
-                        </ul>
+                        {Array.isArray(debugData.failed_attempts) ? (
+                          <ul className="space-y-2">
+                            {debugData.failed_attempts.map((attempt, i) => (
+                              <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                <span className="text-xs font-medium bg-muted rounded px-1.5 py-0.5 mt-0.5 shrink-0">{i + 1}</span>
+                                {attempt}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-muted-foreground bg-muted/50 rounded p-3 whitespace-pre-wrap">
+                            {debugData.failed_attempts as unknown as string}
+                          </p>
+                        )}
                       </Card>
                     )}
                   </>
