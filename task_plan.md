@@ -4,7 +4,7 @@
 Orboh 社内で Claude Code が DebugNote を自動検索・自動投稿するループを回せる状態にする (MVP-α)。
 
 ## Current Phase
-MVP-γ 完了 (Phase 11 done)
+MVP-ε 実装中 (Phase 13-16) — install.sh / skill.md / g1-debug-loop / CLAUDE.md 統合
 
 ## Phases
 
@@ -99,6 +99,61 @@ MVP-γ 完了 (Phase 11 done)
 - [x] `app/(main)/page.tsx` に「Skill Episodes」/「DebugNotes」タブ追加
 - [x] trust_signals.applications 防御的パース修正 (マイグレーション済み旧データ対応)
 - **Status:** complete
+
+### Phase 12: X OAuth 2.0 PKCE — 本番デプロイ (MVP-δ)
+- [x] `apps/web/src/app/api/auth/x/route.ts` に `export const dynamic = 'force-dynamic'` 追加
+- [x] `apps/web/src/app/api/auth/x/callback/route.ts` に同上追加 + try/catch でラップ
+- [x] Cookie をレスポンスオブジェクトに直接セット (`response.cookies.set()`)
+- [x] Express `success()` レスポンス形式を正しく読む (`authData.api_key`、`data` ラッパーなし)
+- [x] Railway 本番 DB に `owner_twitter_id` / `owner_twitter_handle` カラム追加
+  - `node-pg-migrate` が非タイムスタンプ名ファイルを再実行してクラッシュ → `src/index.js` 起動時に `ADD COLUMN IF NOT EXISTS` で解決
+- [x] `apps/api/Dockerfile`: `npm ci --production` → `npm install --omit=dev` に変更
+- [x] `apps/api/railway.toml` 作成（Railway monorepo デプロイ用）
+- [x] Railway deploy: `railway up --detach --service robonet-api apps/api --path-as-root`
+- [x] Vercel deploy: `cd apps/web && npx vercel --prod`
+- [x] ブラウザで X ログイン → API キー取得まで E2E 動作確認済み
+- **Status:** complete (2026-04-29)
+
+### Phase 13: Remote install.sh (curl one-liner) — MVP-ε
+- [x] `orboh-lp/public/install.sh` — curl で取得・実行できる完全セットアップスクリプト
+  - FleetSeek リポジトリの clone / pull
+  - CLI の npm install + link
+  - MCP サーバーの npm install + build
+  - ブラウザで X OAuth (Web URL を open)
+  - `FLEETSEEK_API_URL=<prod> fleetseek auth login` 呼び出し
+  - `fleetseek robot register` 呼び出し
+  - `~/.claude/mcp_servers.json` の自動書き込み (Python で merge)
+- **Status:** complete (2026-04-29)
+
+### Phase 14: skill.md 更新 — 1行インストール + 知識貢献義務
+- [x] Step 3 を `curl -s https://orboh.jp/install | bash` の1行に置き換え
+- [x] Step 6 「知識を貢献する（必須）」セクションを追加
+  - DebugNote の投稿を Optional ではなく必須として記述
+  - Claude Code で「このデバッグを FleetSeek にシェアして」と言う手順を記載
+- **Status:** complete (2026-04-29)
+
+### Phase 15: g1-debug-loop スキル実装
+- [x] `~/.claude/skills/g1-debug-loop/SKILL.md` 作成
+  - デバッグ開始時: `experience_search` を自動呼び出し → task_plan.md の先頭に転記
+  - デバッグ中: failed_attempts を追跡
+  - 解決後: 確認付きで `experience_post` を自動実行
+  - 同時に Obsidian devlog に追記 (`Dev-Log/YYYY-MM-DD.md`)
+- **Status:** complete (2026-04-29)
+
+### Phase 16: Global CLAUDE.md 更新 — FleetSeek + Obsidian 統合
+- [x] install.sh の Step 7 で自動パッチするように変更
+- **Status:** complete (install.sh 経由で解決)
+
+### Phase 17: CLIローカルコールバック認証 (OAuth自動認証) — MVP-ζ
+- [ ] `packages/cli/src/commands/auth.js` — ローカルHTTPサーバー (port 38333) でAPIキーを自動受け取り
+  - `fleetseek auth login` がブラウザを開き、コールバックを待つ
+  - APIキー入力プロンプト不要
+- [ ] `apps/web/src/app/auth/login/page.tsx` — `?cli_port=38333` をsessionStorageに保存
+- [ ] `apps/web/src/app/auth/x/complete/page.tsx` — cli_portがあればlocalhost:38333にAPIキーをGET送信
+  - ブラウザに「✓ Terminal is now authenticated. Close this window.」を表示
+- [ ] `orboh-lp/public/install.sh` — Step 4のxdg-open削除 (CLIが自動でブラウザを開く)
+- [ ] Vercel + orboh-lp デプロイ
+- **Status:** in_progress
 
 ## Key Questions
 1. 既存 `experiences` テーブルはすでに存在するか? (schema.sql 確認要)

@@ -24,6 +24,13 @@ export default function LoginPage() {
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
 
+  // Persist cli_port across the OAuth redirect so the complete page can send
+  // the API key back to the CLI's local HTTP server automatically.
+  const cliPort = searchParams.get('cli_port');
+  if (cliPort && typeof sessionStorage !== 'undefined') {
+    sessionStorage.setItem('fleetseek_cli_port', cliPort);
+  }
+
   const oauthError = searchParams.get('error');
   const [error, setError] = useState(
     oauthError ? (X_ERROR_MESSAGES[oauthError] ?? 'X sign-in failed. Please try again.') : ''
