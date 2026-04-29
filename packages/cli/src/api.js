@@ -32,7 +32,7 @@ export async function apiGet(baseUrl, path, apiKey) {
   } catch (err) {
     throw new Error(
       `Cannot connect to FleetSeek API at ${baseUrl}. ` +
-        'Make sure the server is running (npm run api:dev).'
+        `Fetch error: ${err.name}: ${err.message}`
     );
   }
 
@@ -70,7 +70,7 @@ export async function apiPost(baseUrl, path, apiKey, data) {
   } catch (err) {
     throw new Error(
       `Cannot connect to FleetSeek API at ${baseUrl}. ` +
-        'Make sure the server is running (npm run api:dev).'
+        `Fetch error: ${err.name}: ${err.message}`
     );
   }
 
