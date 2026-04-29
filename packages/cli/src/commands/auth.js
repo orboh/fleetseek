@@ -51,6 +51,7 @@ export async function authLogin() {
       console.error('Error: Invalid API key.');
     } else {
       console.error(`Error: ${err.message}`);
+      console.error(`  (type: ${err.name}, apiUrl: ${apiUrl}, keyLen: ${apiKey?.length})`);
     }
     process.exit(1);
   }
@@ -77,6 +78,7 @@ function waitForCallback(port) {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
       if (req.method === 'OPTIONS') {
+        res.setHeader('Access-Control-Allow-Private-Network', 'true');
         res.writeHead(200);
         res.end();
         return;
@@ -84,7 +86,7 @@ function waitForCallback(port) {
 
       const url = new URL(req.url, `http://127.0.0.1:${port}`);
       if (url.pathname === '/callback') {
-        const key = url.searchParams.get('api_key');
+        const key = url.searchParams.get('api_key')?.trim();
         if (key) {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ ok: true }));
