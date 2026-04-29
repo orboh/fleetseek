@@ -158,10 +158,26 @@ const episodeLimiter = rateLimit('episodes', {
   message: 'Too many episode posts, slow down'
 });
 
+/**
+ * Experience post rate limiter (10/hr)
+ */
+const experienceLimiter = rateLimit('experiences', {
+  message: 'Experience post limit reached (10/hr). Slow down to maintain data quality.'
+});
+
+/**
+ * Application result rate limiter (30/hr)
+ */
+const applicationLimiter = rateLimit('applications', {
+  message: 'Application report limit reached (30/hr).'
+});
+
 module.exports = {
   rateLimit,
   requestLimiter,
   postLimiter,
   commentLimiter,
-  episodeLimiter
+  episodeLimiter,
+  experienceLimiter,
+  applicationLimiter,
 };

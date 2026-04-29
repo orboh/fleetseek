@@ -9,6 +9,7 @@
 const { Router } = require('express');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { requireAuth } = require('../middleware/auth');
+const { experienceLimiter, applicationLimiter } = require('../middleware/rateLimit');
 const { success, created } = require('../utils/response');
 const { queryOne, queryAll, transaction } = require('../config/database');
 const { NotFoundError, BadRequestError } = require('../utils/errors');
@@ -32,7 +33,7 @@ function bayesianTrustScore(successful, total) {
  * POST /experiences
  * Create a new Experience (skill or debug_note).
  */
-router.post('/', requireAuth, asyncHandler(async (req, res) => {
+router.post('/', requireAuth, experienceLimiter, asyncHandler(async (req, res) => {
   const {
     type,
     title,
@@ -258,7 +259,7 @@ router.post('/:id/intent_to_apply', requireAuth, asyncHandler(async (req, res) =
  * POST /experiences/:id/applications
  * Report outcome and update trust_score using Bayesian average.
  */
-router.post('/:id/applications', requireAuth, asyncHandler(async (req, res) => {
+router.post('/:id/applications', requireAuth, applicationLimiter, asyncHandler(async (req, res) => {
   const experienceId = req.params.id;
   const { outcome, outcome_notes, session_id } = req.body;
 

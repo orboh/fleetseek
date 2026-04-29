@@ -26,10 +26,12 @@ const config = {
   
   // Rate Limits
   rateLimits: {
-    requests: { max: 100, window: 60 },
-    posts: { max: 1, window: 1800 },
-    episodes: { max: 10, window: 60 },
-    comments: { max: 50, window: 3600 }
+    requests:    { max: 100, window: 60 },
+    posts:       { max: 1,   window: 1800 },
+    episodes:    { max: 10,  window: 60 },
+    comments:    { max: 50,  window: 3600 },
+    experiences: { max: 10,  window: 3600 },   // 10 experience posts per hour
+    applications:{ max: 30,  window: 3600 },   // 30 apply-result reports per hour
   },
   
   // OpenAI (embedding generation)
