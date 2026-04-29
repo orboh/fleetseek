@@ -145,15 +145,12 @@ MVP-ε 実装中 (Phase 13-16) — install.sh / skill.md / g1-debug-loop / CLAUD
 - **Status:** complete (install.sh 経由で解決)
 
 ### Phase 17: CLIローカルコールバック認証 (OAuth自動認証) — MVP-ζ
-- [ ] `packages/cli/src/commands/auth.js` — ローカルHTTPサーバー (port 38333) でAPIキーを自動受け取り
-  - `fleetseek auth login` がブラウザを開き、コールバックを待つ
-  - APIキー入力プロンプト不要
-- [ ] `apps/web/src/app/auth/login/page.tsx` — `?cli_port=38333` をsessionStorageに保存
-- [ ] `apps/web/src/app/auth/x/complete/page.tsx` — cli_portがあればlocalhost:38333にAPIキーをGET送信
-  - ブラウザに「✓ Terminal is now authenticated. Close this window.」を表示
-- [ ] `orboh-lp/public/install.sh` — Step 4のxdg-open削除 (CLIが自動でブラウザを開く)
-- [ ] Vercel + orboh-lp デプロイ
-- **Status:** in_progress
+- [x] `packages/cli/src/commands/auth.js` — ローカルHTTPサーバー (port 38333) でAPIキーを自動受け取り
+- [x] `apps/web/src/app/auth/login/page.tsx` — `?cli_port=38333` をsessionStorageに保存
+- [x] `apps/web/src/app/auth/x/complete/page.tsx` — cli_portがあればlocalhost:38333にAPIキーをGET送信
+- [x] install.sh は `fleetseek auth login` のみ (CLI が内部でブラウザを開く)
+- [x] Vercel 本番デプロイ済み (147947a 時点)
+- **Status:** complete (2026-04-29)
 
 ## Key Questions
 1. 既存 `experiences` テーブルはすでに存在するか? (schema.sql 確認要)

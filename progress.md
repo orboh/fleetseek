@@ -1,5 +1,78 @@
 # Progress Log — FleetSeek DebugNote MVP-α
 
+## Session: 2026-04-29 — installer E2E 動作確認 + UI バグ修正 + Phase 17 完了
+
+### Phase 17: CLI ローカルコールバック認証 (MVP-ζ)
+- **Status:** complete (2026-04-29)
+- Actions taken:
+  - `packages/cli/src/commands/auth.js`: ローカル HTTP サーバー (port 38333) でAPIキーを自動受け取り
+  - `apps/web/src/app/auth/login/page.tsx`: `?cli_port` を sessionStorage に保存済み（コミット済み）
+  - `apps/web/src/app/auth/x/complete/page.tsx`: cli_port があれば `localhost:38333` にAPIキーを GET 送信済み（コミット済み）
+  - install.sh は `fleetseek auth login` 呼び出しのみ (xdg-open は CLI が内部で処理)
+  - Vercel は `147947a` デプロイ時にこれらのファイルを含めて本番反映済み
+
+### installer E2E 動作確認 (curl one-liner)
+- **Status:** complete (2026-04-29)
+- Issues fixed:
+  - `curl | bash` で inquirer が "Cancelled." → `< /dev/tty` で解決
+  - Railway DB 500 error (missing columns) → `applyMigrations()` に DDL 追加で解決
+  - MCP `~/.claude/mcp_servers.json` → `~/.claude.json` の `mcpServers` に変更
+  - Robot ID: `rbt_01KQBSVNEBF23YNQY53H41KASG` 発行済み
+  - `fleetseek · ✔ connected` を `/mcp` で確認
+
+### UI バグ修正: experience detail page
+- **Status:** complete (2026-04-29)
+- Bug: `TypeError: v.failed_attempts.map is not a function`
+  - Root cause: MCP 経由で投稿した debug_note の `failed_attempts` が文字列
+  - Fix: `Array.isArray()` ガード + `typeof === 'string'` フォールバック表示
+- Commit: `147947a`, Vercel 本番デプロイ済み
+
+---
+
+## Session: 2026-04-29 — MVP-ε: install.sh / skill.md / g1-debug-loop
+
+### Phase 13-15: 実装完了
+- `orboh-lp/public/install.sh` 新規作成 (curl one-liner セットアップ)
+- `orboh-lp/public/skill.md` 更新 (Step 3 を1行化 + Step 6 知識貢献義務追加)
+- `~/.claude/skills/g1-debug-loop/SKILL.md` 新規作成
+- Phase 16 (`~/.claude/CLAUDE.md`) はセキュリティフックによりブロック → ユーザーが手動追加
+
+---
+
+## Session: 2026-04-29 — X OAuth 本番デプロイ (MVP-δ)
+
+### Phase 12: X OAuth 2.0 PKCE ログイン
+- **Status:** complete
+- Actions taken:
+  - Next.js 14 静的プリレンダリング問題を発見・修正 (`export const dynamic = 'force-dynamic'`)
+  - Cookie をリダイレクトレスポンスに正しくセット (`response.cookies.set()`)
+  - Railway 本番 DB に twitter カラム追加（`src/index.js` 起動時 `ADD COLUMN IF NOT EXISTS`）
+  - `apps/api/Dockerfile` の `npm ci` → `npm install --omit=dev` 変更
+  - `apps/api/railway.toml` 作成
+  - Railway + Vercel に本番デプロイ、X ログイン E2E 動作確認
+  - Orboh LP の `public/skill.md` を Railway URL・X login フローに合わせて修正
+  - LP を `github.com/Orboh/orboh-lp` main にプッシュ → `orboh-lp.vercel.app` 自動デプロイ
+- Files created/modified:
+  - `apps/web/src/app/api/auth/x/route.ts` (dynamic + cookie fix)
+  - `apps/web/src/app/api/auth/x/callback/route.ts` (dynamic + try/catch + response format fix)
+  - `apps/api/src/index.js` (applyMigrations 追加)
+  - `apps/api/Dockerfile` (npm ci → npm install)
+  - `apps/api/railway.toml` (新規)
+  - `FleetSeek/CLAUDE.md` (デプロイ手順 + Next.js gotchas 追記)
+  - `packages/sdk/README.md` (完全書き直し — 全メソッド文書化)
+
+### バグ修正一覧
+| バグ | 原因 | 修正 |
+|------|------|------|
+| Vercel「このページは動作していません」 | Next.js が `/api/auth/x` を静的プリレンダリング | `export const dynamic = 'force-dynamic'` |
+| Cookie が引き継がれない | `cookies().set()` はリダイレクトに乗らない | `response.cookies.set()` に変更 |
+| `x_auth_failed`（DB カラムなし） | Railway 本番 DB に twitter カラムが未追加 | `src/index.js` 起動時に `ADD COLUMN IF NOT EXISTS` |
+| `x_auth_failed`（レスポンス形式）| `authData.data.api_key` と誤読（`success()` は data ラッパーなし） | `authData.api_key` に修正 |
+| Railway ビルド「start command not found」 | モノレポルートから `railway up` → `apps/api` が見つからない | `--path-as-root` + `railway.toml` 追加 |
+| Railway npm ci エラー | lock file 非同期 | `npm install --omit=dev` に変更 |
+
+---
+
 ## Session: 2026-04-28 (continued)
 
 ### Phase 2: DB スキーマ設計・マイグレーション
