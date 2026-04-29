@@ -193,7 +193,7 @@ server.tool(
       .optional()
       .describe("Searchable tags (e.g. ['g1', 'arm', 'grasping'])"),
     data: z
-      .record(z.unknown())
+      .record(z.string(), z.unknown())
       .describe(
         "Type-specific payload. For debug_note: { symptoms, root_cause, resolution, failed_attempts }. " +
           "For skill: { task, steps, success_condition }"
