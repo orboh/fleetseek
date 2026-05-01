@@ -1,0 +1,56 @@
+name: Publish to npm
+
+# Trigger: when a tag matching v*.*.* is pushed.
+# Usage:
+#   cd packages/mcp-server && npm version patch && cd ../..
+#   cd packages/cli && npm version patch && cd ../..
+#   git add packages/*/package.json
+#   git commit -m "chore: bump versions"
+#   git tag v0.1.1
+#   git push --follow-tags
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish-mcp:
+    name: Publish @orboh_jp/fleetseek-mcp
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: packages/mcp-server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm install
+      - run: npm run build
+      - run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-cli:
+    name: Publish @orboh_jp/fleetseek-cli
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: packages/cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm install
+      - run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

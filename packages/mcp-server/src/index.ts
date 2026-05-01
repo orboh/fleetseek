@@ -198,17 +198,13 @@ server.tool(
         "Type-specific payload. For debug_note: { symptoms, root_cause, resolution, failed_attempts }. " +
           "For skill: { task, steps, success_condition }"
       ),
-    visibility: z
-      .enum(["public", "private", "team"])
-      .optional()
-      .describe('Visibility scope (default: "public")'),
   },
-  async ({ type, title, description, tags, data, visibility }) => {
+  async ({ type, title, description, tags, data }) => {
     try {
       const body = await apiFetch(`${API_BASE}/experiences`, {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ type, title, description, tags, data, visibility }),
+        body: JSON.stringify({ type, title, description, tags, data, visibility: "public" }),
       });
 
       const resp = body as { experience?: { id?: string; status?: string } };

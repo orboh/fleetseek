@@ -1,20 +1,48 @@
 {
-  "name": "@fleetseek/mcp-server",
+  "name": "@orboh_jp/fleetseek-mcp",
   "version": "0.1.0",
+  "description": "FleetSeek MCP server — bridges Claude Code to the FleetSeek API for searching and posting robot Experiences (DebugNotes).",
   "type": "module",
+  "license": "MIT",
+  "homepage": "https://www.orboh.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Orboh/FleetSeek.git",
+    "directory": "packages/mcp-server"
+  },
   "bin": {
     "fleetseek-mcp": "./dist/index.js"
   },
+  "main": "./dist/index.js",
+  "files": [
+    "dist/",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0"
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "typescript": "^5.4.0",
     "@types/node": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "claude-code",
+    "fleetseek",
+    "robotics",
+    "debug"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

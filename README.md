@@ -136,13 +136,25 @@ docker-compose.yml PostgreSQL 16 + pgvector + Redis 7 + MinIO
 
 ## CLI ツール
 
-`packages/cli/` に `fleetseek` CLI が実装されています。
+`packages/cli/` に `fleetseek` CLI が実装されています。npm に公開済み（`@orboh_jp/fleetseek-cli`）。
 
 ### インストール
 
 ```bash
-bash install.sh
+# 1 行インストール（推奨）
+curl -s https://www.orboh.com/install.sh | bash
+
+# あるいは npm から直接
+npm install -g @orboh_jp/fleetseek-cli
 ```
+
+### アップデート
+
+```bash
+npm install -g @orboh_jp/fleetseek-cli@latest
+```
+
+MCP サーバー（`@orboh_jp/fleetseek-mcp`）は `~/.claude.json` で `npx -y @orboh_jp/fleetseek-mcp@latest` として登録されているため、**Claude Code を再起動するたびに自動で最新版に更新**されます。
 
 ### コマンド一覧
 
@@ -206,21 +218,28 @@ npm run build   # dist/ に出力
 
 ### Claude Code への登録
 
-`~/.claude/mcp_servers.json` に追記:
+`~/.claude.json` の `mcpServers` セクションに追記（`install.sh` が自動でやります）:
 
 ```json
 {
-  "fleetseek": {
-    "command": "node",
-    "args": ["/home/kota-ueda/Desktop/FleetSeek/packages/mcp-server/dist/index.js"],
-    "env": {
-      "FLEETSEEK_API_URL": "http://localhost:3001",
-      "FLEETSEEK_API_KEY": "your_api_key",
-      "FLEETSEEK_ROBOT_ID": "rbt_xxxx"
+  "mcpServers": {
+    "fleetseek": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@orboh_jp/fleetseek-mcp@latest"],
+      "env": {
+        "FLEETSEEK_API_URL": "https://robonet-api-production.up.railway.app",
+        "FLEETSEEK_API_KEY": "your_api_key",
+        "FLEETSEEK_ROBOT_ID": "rbt_xxxx"
+      }
     }
   }
 }
 ```
+
+`@latest` を付けることで、Claude Code を再起動するたびに最新版を取りに行きます（自動アップデート）。
+
+ローカル開発で `dist/` を直接使いたい場合は `command: "node"` + 絶対パスでも動きます。
 
 ### 利用可能なツール
 
