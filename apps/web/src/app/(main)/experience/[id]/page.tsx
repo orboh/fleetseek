@@ -73,12 +73,11 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   }
 
   const summary = extractSummary(e).slice(0, 200);
-  const title = `${e.title} — FleetSeek`;
   const url = `${SITE_URL}/experience/${e.id}`;
   const typeLabel = e.type === 'debug_note' ? 'DebugNote' : 'Skill';
 
   return {
-    title,
+    title: e.title,
     description: summary,
     keywords: [...(e.tags ?? []), typeLabel, 'FleetSeek', 'G1', 'robotics'],
     alternates: { canonical: url },
